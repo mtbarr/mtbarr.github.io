@@ -192,6 +192,18 @@
             background-color: var(--accent);
         }
 
+        .error-message {
+            text-align: center;
+            font-size: 1.5em;
+            margin-top: 50px;
+        }
+
+        .error-message .emoji {
+            font-size: 2em;
+            display: block;
+            margin-bottom: 10px;
+        }
+
         footer {
             background-color: var(--footer-bg);
             padding: 20px 0;
@@ -279,24 +291,22 @@
             }
         ].sort((a, b) => new Date(b.date) - new Date(a.date));
 
-        // Função para obter o índice do post a partir da URL
         function getPostIndexFromUrl() {
             const urlParams = new URLSearchParams(window.location.search);
             const postIndex = urlParams.get('post');
-            console.log('Índice do post na URL:', postIndex); // Depuração
             return postIndex ? parseInt(postIndex, 10) : null;
         }
 
-        // Função para atualizar a URL sem recarregar a página
         function updateUrl(index) {
-            const url = index !== null ? `?post=${index}` : '/';
-            window.history.pushState({ index }, '', url);
-            console.log('URL atualizada:', url); // Depuração
+            try {
+                if (window.location.protocol !== 'file:') {
+                    const url = index !== null ? `?post=${index}` : '/';
+                    window.history.pushState({ index }, '', url);
+                }
+            } catch (error) {}
         }
 
-        // Função para exibir a lista de posts
         function showPostList() {
-            console.log('Exibindo lista de posts'); // Depuração
             const postList = document.querySelector('.timeline');
             const postView = document.getElementById('post-view');
             document.getElementById('post-list').style.display = 'block';
@@ -328,23 +338,19 @@
                 link.addEventListener('click', (e) => {
                     e.preventDefault();
                     const index = e.target.getAttribute('data-index');
-                    console.log('Clicou no post com índice:', index); // Depuração
                     showPost(index);
                 });
             });
         }
 
-        // Função para exibir um post específico
         async function showPost(index) {
-            console.log('Exibindo post com índice:', index); // Depuração
             const postList = document.getElementById('post-list');
             const postView = document.getElementById('post-view');
             const postContent = document.getElementById('post-content');
             const gist = ALL_POSTS[index];
 
             if (!gist) {
-                console.error('Post não encontrado para o índice:', index);
-                showPostList();
+                showErrorPage();
                 return;
             }
 
@@ -356,7 +362,6 @@
             try {
                 let markdown = localStorage.getItem(gist.url);
                 if (!markdown) {
-                    console.log('Buscando Markdown do post:', gist.url); // Depuração
                     const response = await fetch(gist.url);
                     if (!response.ok) throw new Error(`Erro ao carregar ${gist.url}`);
                     markdown = await response.text();
@@ -381,12 +386,28 @@
                     </div>
                 `;
             } catch (error) {
-                console.error('Erro ao carregar post:', error);
                 postContent.innerHTML = '<p>Erro ao carregar o post.</p>';
             }
         }
 
-        // Configuração do tema
+        function showErrorPage() {
+            const postList = document.getElementById('post-list');
+            const postView = document.getElementById('post-view');
+            const postContent = document.getElementById('post-content');
+
+            postList.style.display = 'none';
+            postView.style.display = 'block';
+
+            updateUrl(null);
+
+            postContent.innerHTML = `
+                <div class="error-message">
+                    <span class="emoji">😢</span>
+                    <p>Desculpe, o post solicitado não foi encontrado.</p>
+                </div>
+            `;
+        }
+
         const themeToggle = document.getElementById('theme-toggle');
         const themeIcon = themeToggle.querySelector('i');
         const savedTheme = localStorage.getItem('theme') || 'dark';
@@ -410,16 +431,12 @@
             themeIcon.className = theme === 'light' ? 'fas fa-sun' : 'fas fa-moon';
         }
 
-        // Evento do botão "Voltar"
         document.getElementById('back-button').addEventListener('click', () => {
-            console.log('Botão Voltar clicado'); // Depuração
             showPostList();
         });
 
-        // Lidar com navegação (botões de voltar/avançar)
         window.addEventListener('popstate', (event) => {
             const index = event.state ? event.state.index : null;
-            console.log('Evento popstate, índice:', index); // Depuração
             if (index !== null && index >= 0 && index < ALL_POSTS.length) {
                 showPost(index);
             } else {
@@ -427,13 +444,17 @@
             }
         });
 
-        // Inicializar a página com base na URL
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('Página carregada, verificando URL'); // Depuração
-            const postIndex = getPostIndexFromUrl();
-            if (postIndex !== null && postIndex >= 0 && postIndex < ALL_POSTS.length) {
-                showPost(postIndex);
-            } else {
+            try {
+                const postIndex = getPostIndexFromUrl();
+                if (postIndex !== null && postIndex >= 0 && postIndex < ALL_POSTS.length) {
+                    showPost(postIndex);
+                } else if (postIndex !== null) {
+                    showErrorPage();
+                } else {
+                    showPostList();
+                }
+            } catch (error) {
                 showPostList();
             }
         });
