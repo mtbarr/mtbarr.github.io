@@ -6,15 +6,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Meu Blog</title>
 
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Meu Blog - mtbarr">
+    <meta property="og:description" content="Blog sobre tecnologia, programação e cultura, por Matheus Barreto.">
+    <meta property="og:url" content="https://mtbarr.github.io/"> 
+    <meta property="og:site_name" content="Meu Blog">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Meu Blog - mtbarr">
+    <meta name="twitter:description" content="Blog sobre tecnologia, programação e cultura, por Matheus Barreto.">
+
     <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/base16/gruvbox-dark.min.css"
         id="highlight-theme">
-
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/java.min.js"></script>
-
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@typopro/web-iosevka@3.7.4/TypoPRO-Iosevka.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
@@ -341,13 +348,47 @@
             margin: 50px 0;
             font-size: 1.2em;
         }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .pagination button {
+            background-color: var(--secondary);
+            color: var(--bg);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-family: 'Iosevka Term Extended', 'Fira Code', monospace;
+        }
+
+        .pagination button:hover:not(:disabled) {
+            background-color: var(--accent);
+        }
+
+        .pagination button:disabled {
+            background-color: var(--border);
+            cursor: not-allowed;
+        }
+
+        .pagination #page-info {
+            font-size: 1em;
+            color: var(--fg);
+        }
     </style>
 </head>
 
 <body>
     <div class="container">
         <header>
-            <h1>Meu Blog</h1>
+            <h1>Meu Blog - mtbarr</h1>
             <button id="theme-toggle"><i class="fas fa-moon"></i></button>
         </header>
 
@@ -362,11 +403,16 @@
             </div>
 
             <div class="timeline"></div>
+            <div class="pagination">
+                <button id="prev-page" disabled>Anterior</button>
+                <span id="page-info"></span>
+                <button id="next-page">Próximo</button>
+            </div>
             <div class="no-results" style="display: none;">Nenhum post encontrado para esta pesquisa.</div>
         </div>
 
         <div id="post-view">
-            <button id="back-button" style="display: none;">Voltar</button>
+            <button id="back-button">Voltar</button>
             <div id="post-content"></div>
         </div>
     </div>
@@ -382,406 +428,369 @@
     </footer>
 
     <script>
-        hljs.highlightAll();
-
         marked.setOptions({
-            highlight: function (code, lang) {
+            highlight: (code, lang) => {
                 const language = hljs.getLanguage(lang) ? lang : 'plaintext';
                 return hljs.highlight(code, { language }).value;
             },
-            langPrefix: 'hljs language-'
+            langPrefix: 'hljs language-',
         });
 
-        const ALL_POSTS = [
-            {
-                url: 'https://raw.githubusercontent.com/mtbarr/blogposts/refs/heads/main/post1.md',
-                title: 'Valide as Bordas do Seu Sistema',
-                date: '2025-04-20',
-                tags: ['java', 'arquitetura', 'segurança'],
-                slug: 'valide-as-bordas-do-sistema'
-            },
-            {
-                url: 'https://raw.githubusercontent.com/mtbarr/blogposts/refs/heads/main/post2.md',
-                title: 'Javismo Cultural: Quando a Herança Pesa Mais que a Linguagem',
-                date: '2025-04-24',
-                tags: ['java', 'cultura'],
-                slug: 'javismo-cultural'
-            },
-        ].sort((a, b) => new Date(b.date) - new Date(a.date));
+        // Global state of the
+        const state = {
+            allPosts: [
+                {
+                    url: 'https://raw.githubusercontent.com/mtbarr/blogposts/refs/heads/main/post1.md',
+                    title: 'Valide as Bordas do Seu Sistema',
+                    date: '2025-04-20',
+                    tags: ['java', 'arquitetura', 'segurança'],
+                    slug: 'valide-as-bordas-do-sistema'
+                },
+                {
+                    url: 'https://raw.githubusercontent.com/mtbarr/blogposts/refs/heads/main/post2.md',
+                    title: 'Javismo Cultural: Quando a Herança Pesa Mais que a Linguagem',
+                    date: '2025-04-24',
+                    tags: ['java', 'cultura'],
+                    slug: 'javismo-cultural'
+                }
+            ].sort((a, b) => new Date(b.date) - new Date(a.date)),
+            filteredPosts: [],
+            activeTags: [],
+            isLoading: false,
+            error: null,
+            currentPostIndex: null,
+            theme: localStorage.getItem('theme') || 'dark',
+            currentPage: 1,
+            postsPerPage: 5
+        };
 
-        let filteredPosts = [...ALL_POSTS];
-        let activeTags = [];
+        const debounce = (func, wait) => {
+            let timeout;
+            return (...args) => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func(...args), wait);
+            };
+        };
 
-        function getPostFromUrl() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const postIndex = urlParams.get('post');
-            const slug = urlParams.get('slug');
+        const formatDate = (date) =>
+            new Date(date).toLocaleDateString('pt-BR', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+            });
 
-            if (postIndex) {
-                return { type: 'index', value: parseInt(postIndex, 10) };
-            } else if (slug) {
-                const index = ALL_POSTS.findIndex(post => post.slug === slug);
+        const getPostFromUrl = () => {
+            const params = new URLSearchParams(window.location.search);
+            const postIndex = params.get('post');
+            const slug = params.get('slug');
+
+            if (postIndex) return { type: 'index', value: parseInt(postIndex, 10) };
+            if (slug) {
+                const index = state.allPosts.findIndex((post) => post.slug === slug);
                 return { type: 'slug', value: index !== -1 ? index : null };
             }
-
             return { type: null, value: null };
-        }
+        };
 
-        function updateUrl(index) {
+        const updateUrl = (index) => {
             try {
-                if (window.location.protocol !== 'file:') {
-                    if (index !== null) {
-                        const post = ALL_POSTS[index];
-                        if (post && post.slug) {
-                            window.history.pushState({ index }, '', `?slug=${post.slug}`);
-                        } else {
-                            window.history.pushState({ index }, '', `?post=${index}`);
-                        }
-                    } else {
-                        window.history.pushState({ index: null }, '', '/');
-                    }
-                }
-            } catch (error) { }
-        }
+                if (window.location.protocol === 'file:') return;
+                const path =
+                    index !== null && state.allPosts[index]
+                        ? `?slug=${state.allPosts[index].slug}`
+                        : '/';
+                window.history.pushState({ index }, '', path);
+            } catch (error) {
+                console.error('Erro ao atualizar URL:', error);
+            }
+        };
 
-        function clearMarkdownCache() {
-            ALL_POSTS.forEach(post => {
-                localStorage.removeItem(post.url);
-            });
-        }
+        const clearMarkdownCache = () => {
+            state.allPosts.forEach((post) => localStorage.removeItem(post.url));
+        };
 
-        function setupTagFilters() {
+        const setupTagFilters = () => {
             const tagFiltersContainer = document.querySelector('.tag-filters');
             const allTagsButton = document.getElementById('all-tags');
             const clearFiltersButton = document.getElementById('clear-filters');
+            const uniqueTags = [...new Set(state.allPosts.flatMap((post) => post.tags))].sort();
 
-            const uniqueTags = new Set();
-            ALL_POSTS.forEach(post => {
-                post.tags.forEach(tag => uniqueTags.add(tag));
-            });
-
-            const sortedTags = Array.from(uniqueTags).sort();
-
-            sortedTags.forEach(tag => {
+            uniqueTags.forEach((tag) => {
                 const tagElement = document.createElement('span');
                 tagElement.className = 'tag';
                 tagElement.textContent = tag;
-                tagElement.setAttribute('data-tag', tag);
+                tagElement.dataset.tag = tag;
                 tagFiltersContainer.insertBefore(tagElement, clearFiltersButton);
 
-                tagElement.addEventListener('click', () => {
-                    toggleTagFilter(tag, tagElement);
-                });
+                tagElement.addEventListener('click', () => toggleTagFilter(tag, tagElement));
             });
 
             allTagsButton.addEventListener('click', () => {
-                document.querySelectorAll('.tag-filters .tag').forEach(el => {
-                    el.classList.remove('active');
-                });
+                document.querySelectorAll('.tag-filters .tag').forEach((el) => el.classList.remove('active'));
                 allTagsButton.classList.add('active');
-                activeTags = [];
+                state.activeTags = [];
+                state.currentPage = 1;
                 filterAndSearchPosts();
                 updateClearFiltersButton();
             });
 
-            clearFiltersButton.addEventListener('click', () => {
-                clearFilters();
-            });
-        }
+            clearFiltersButton.addEventListener('click', clearFilters);
+        };
 
-        function toggleTagFilter(tag, element) {
+        const toggleTagFilter = (tag, element) => {
             const allTagsButton = document.getElementById('all-tags');
+            const isActive = element.classList.toggle('active');
 
-            if (element.classList.contains('active')) {
-                element.classList.remove('active');
-                activeTags = activeTags.filter(t => t !== tag);
-            } else {
-                element.classList.add('active');
-                activeTags.push(tag);
-            }
+            state.activeTags = isActive
+                ? [...state.activeTags, tag]
+                : state.activeTags.filter((t) => t !== tag);
 
-            if (activeTags.length === 0) {
-                allTagsButton.classList.add('active');
-            } else {
-                allTagsButton.classList.remove('active');
-            }
-
+            allTagsButton.classList.toggle('active', state.activeTags.length === 0);
+            state.currentPage = 1;
             filterAndSearchPosts();
             updateClearFiltersButton();
-        }
+        };
 
-        function clearFilters() {
-            const allTagsButton = document.getElementById('all-tags');
-            document.querySelectorAll('.tag-filters .tag').forEach(el => {
-                el.classList.remove('active');
-            });
-            allTagsButton.classList.add('active');
-            activeTags = [];
+        const clearFilters = () => {
+            document.querySelectorAll('.tag-filters .tag').forEach((el) => el.classList.remove('active'));
+            document.getElementById('all-tags').classList.add('active');
+            state.activeTags = [];
+            state.currentPage = 1;
             filterAndSearchPosts();
             updateClearFiltersButton();
-        }
+        };
 
-        function updateClearFiltersButton() {
-            const clearFiltersButton = document.getElementById('clear-filters');
-            clearFiltersButton.style.display = activeTags.length > 0 ? 'inline-block' : 'none';
-        }
+        const updateClearFiltersButton = () => {
+            document.getElementById('clear-filters').style.display =
+                state.activeTags.length > 0 ? 'inline-block' : 'none';
+        };
 
-        function setupSearch() {
+        const setupSearch = () => {
             const searchInput = document.getElementById('search-input');
-            searchInput.addEventListener('input', debounce(() => {
-                filterAndSearchPosts();
-            }, 100));
-        }
+            searchInput.addEventListener('input', debounce(filterAndSearchPosts, 300));
+        };
 
-        function debounce(func, wait) {
-            let timeout;
-            return function () {
-                const context = this;
-                const args = arguments;
-                clearTimeout(timeout);
-                timeout = setTimeout(() => {
-                    func.apply(context, args);
-                }, wait);
-            };
-        }
-
-        function filterAndSearchPosts() {
+        const filterAndSearchPosts = () => {
             const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
 
-            filteredPosts = ALL_POSTS.filter(post => {
-                const matchesSearchTerm = post.title.toLowerCase().includes(searchTerm) ||
-                    post.slug.toLowerCase().includes(searchTerm);
+            state.filteredPosts = state.allPosts.filter((post) => {
+                const matchesSearch = post.title.toLowerCase().includes(searchTerm)
+                    || post.slug.toLowerCase().includes(searchTerm);
 
-                const matchesTags = activeTags.length === 0 ||
-                    activeTags.every(tag => post.tags.includes(tag));
+                const matchesTags = state.activeTags.length === 0
+                    || state.activeTags.every((tag) => post.tags.includes(tag));
 
-                return matchesSearchTerm && matchesTags;
+                return matchesSearch && matchesTags;
             });
 
-            showPostList();
-        }
+            state.currentPage = 1;
+            renderPostList();
+        };
 
-        function showPostList() {
+        const renderPostList = () => {
             const postList = document.querySelector('.timeline');
             const postView = document.getElementById('post-view');
             const noResults = document.querySelector('.no-results');
-            const backButton = document.getElementById('back-button');
+            const prevButton = document.getElementById('prev-page');
+            const nextButton = document.getElementById('next-page');
+            const pageInfo = document.getElementById('page-info');
 
             document.getElementById('post-list').style.display = 'block';
             postView.style.display = 'none';
-            backButton.style.display = 'none';
-
+            postList.style.opacity = '0';
             updateUrl(null);
 
-            postList.innerHTML = '';
+            postList.innerHTML = state.isLoading
+                ? '<div class="loading">Carregando...</div>'
+                : state.error
+                    ? `<div class="error-message">${state.error}</div>`
+                    : '';
 
-            if (filteredPosts.length === 0) {
-                noResults.style.display = 'block';
-            } else {
-                noResults.style.display = 'none';
+            if (!state.isLoading && !state.error) {
+                noResults.style.display = state.filteredPosts.length === 0 ? 'block' : 'none';
 
-                filteredPosts.forEach((post, index) => {
+                const startIndex = (state.currentPage - 1) * state.postsPerPage;
+                const endIndex = startIndex + state.postsPerPage;
+                const paginatedPosts = state.filteredPosts.slice(startIndex, endIndex);
+
+                paginatedPosts.forEach((post, index) => {
                     const postItem = document.createElement('div');
                     postItem.className = 'post-item';
+                    postItem.innerHTML = `<a href="#" data-index="${state.allPosts.indexOf(post)}">${post.title}</a>
+                        <div class="post-date">${formatDate(post.date)}</div>
+                        <div class="post-tags">${post.tags.map((tag) => `<span class="tag">${tag}</span>`).join('')}</div>`;
 
-                    const postDate = new Date(post.date + 'T12:00:00Z');
-                    const formattedDate = postDate.toLocaleDateString('pt-BR', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                    });
-
-                    let tagsHTML = '';
-                    if (post.tags && post.tags.length > 0) {
-                        tagsHTML = '<div class="post-tags">';
-                        post.tags.forEach(tag => {
-                            tagsHTML += `<span class="tag">${tag}</span>`;
-                        });
-                        tagsHTML += '</div>';
-                    }
-
-                    postItem.innerHTML = `
-                        <a href="#" data-index="${ALL_POSTS.indexOf(post)}">${post.title}</a>
-                        <div class="post-date">${formattedDate}</div>
-                        ${tagsHTML}
-                    `;
                     postList.appendChild(postItem);
                 });
 
-                document.querySelectorAll('.post-item a').forEach(link => {
+                postList.querySelectorAll('.post-item a').forEach((link) =>
                     link.addEventListener('click', (e) => {
                         e.preventDefault();
-                        const index = e.target.getAttribute('data-index');
-                        showPost(index);
-                    });
-                });
+                        showPost(parseInt(e.target.dataset.index));
+                    })
+                );
 
-                document.querySelectorAll('.post-item .tag').forEach(tag => {
+                postList.querySelectorAll('.post-item .tag').forEach((tag) =>
                     tag.addEventListener('click', (e) => {
                         e.stopPropagation();
                         const tagText = e.target.textContent;
                         const tagElement = document.querySelector(`.tag-filters .tag[data-tag="${tagText}"]`);
                         if (tagElement) {
+                            state.currentPage = 1;
                             toggleTagFilter(tagText, tagElement);
                         }
-                    });
-                });
-            }
-        }
+                    })
+                );
 
-        async function showPost(index) {
+                const totalPages = Math.ceil(state.filteredPosts.length / state.postsPerPage);
+                prevButton.disabled = state.currentPage === 1;
+                nextButton.disabled = state.currentPage === totalPages || totalPages === 0;
+                pageInfo.textContent = totalPages > 0 ? `Página ${state.currentPage} de ${totalPages}` : 'Sem posts';
+
+                prevButton.onclick = () => {
+                    if (state.currentPage > 1) {
+                        state.currentPage--;
+                        renderPostList();
+                    }
+                };
+                nextButton.onclick = () => {
+                    if (state.currentPage < totalPages) {
+                        state.currentPage++;
+                        renderPostList();
+                    }
+                };
+            }
+
+            setTimeout(() => {
+                postList.style.transition = 'opacity 0.3s';
+                postList.style.opacity = '1';
+            }, 0);
+        };
+
+        const showPost = async (index) => {
+            state.isLoading = true;
+            state.error = null;
+            renderPostList();
+
             const postList = document.getElementById('post-list');
             const postView = document.getElementById('post-view');
             const postContent = document.getElementById('post-content');
-            const backButton = document.getElementById('back-button');
-            const gist = ALL_POSTS[index];
+            const post = state.allPosts[index];
 
-            if (!gist) {
-                showErrorPage();
+            if (!post) {
+                state.error = 'Post não encontrado';
+                state.isLoading = false;
+                renderErrorPage();
                 return;
             }
 
             postList.style.display = 'none';
             postView.style.display = 'block';
-            backButton.style.display = 'block';
-
+            postView.style.opacity = '0';
             updateUrl(index);
 
             try {
-                const response = await fetch(gist.url);
-                if (!response.ok) throw new Error(`Erro ao carregar ${gist.url}`);
+                const response = await fetch(post.url);
+                if (!response.ok) throw new Error(`Erro ao carregar ${post.url}`);
                 const markdown = await response.text();
-
                 const html = marked.parse(markdown);
 
-                const postDate = new Date(gist.date + 'T12:00:00Z');
-                const formattedDate = postDate.toLocaleDateString('pt-BR', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                });
-
-                let tagsHTML = '';
-                if (gist.tags && gist.tags.length > 0) {
-                    tagsHTML = '<div class="post-tags">';
-                    gist.tags.forEach(tag => {
-                        tagsHTML += `<span class="tag">${tag}</span>`;
-                    });
-                    tagsHTML += '</div>';
-                }
-
-                postContent.innerHTML = `
-                    <div class="post">
-                        <h2>${gist.title}</h2>
-                        <div class="post-date">${formattedDate}</div>
-                        ${tagsHTML}
+                postContent.innerHTML = ` <div class="post">
+                        <h2>${post.title}</h2>
+                        <div class="post-date">${formatDate(post.date)}</div>
+                        <div class="post-tags">${post.tags.map((tag) => `<span class="tag">${tag}</span>`).join('')}</div>
                         <div class="post-content">${html}</div>
-                    </div>
-                `;
+                    </div>`;
 
-                document.querySelectorAll('#post-content .tag').forEach(tag => {
+                postContent.querySelectorAll('.tag').forEach((tag) =>
                     tag.addEventListener('click', () => {
                         const tagText = tag.textContent;
                         const tagElement = document.querySelector(`.tag-filters .tag[data-tag="${tagText}"]`);
                         if (tagElement) {
-                            showPostList();
+                            renderPostList();
                             toggleTagFilter(tagText, tagElement);
                         }
-                    });
-                });
-            } catch (error) {
-                postContent.innerHTML = '<p>Erro ao carregar o post.</p>';
-            }
-        }
+                    })
+                );
 
-        function showErrorPage() {
+                setTimeout(() => {
+                    postView.style.transition = 'opacity 0.3s';
+                    postView.style.opacity = '1';
+                }, 0);
+            } catch (error) {
+                state.error = 'Erro ao carregar o post. Tente novamente mais tarde.';
+                renderErrorPage();
+            } finally {
+                state.isLoading = false;
+            }
+        };
+
+        const renderErrorPage = () => {
             const postList = document.getElementById('post-list');
             const postView = document.getElementById('post-view');
             const postContent = document.getElementById('post-content');
 
             postList.style.display = 'none';
             postView.style.display = 'block';
-
             updateUrl(null);
 
-            postContent.innerHTML = `
-                <div class="error-message">
+            postContent.innerHTML = `<div class="error-message">
                     <span class="emoji">:(</span>
-                    <p>Desculpe, o post solicitado não foi encontrado.</p>
-                </div>
-            `;
-        }
+                    <p>${state.error || 'Desculpe, o post solicitado não foi encontrado.'}</p>
+                    </div>`;
+        };
 
-        const themeToggle = document.getElementById('theme-toggle');
-        const themeIcon = themeToggle.querySelector('i');
-        const highlightThemeLink = document.getElementById('highlight-theme');
-
-        function applyTheme(theme) {
+        const applyTheme = (theme) => {
+            state.theme = theme;
             document.documentElement.setAttribute('data-theme', theme);
             localStorage.setItem('theme', theme);
-            updateThemeIcon(theme);
+            document.getElementById('theme-toggle').querySelector('i').className =
+                theme === 'light' ? 'fas fa-sun' : 'fas fa-moon';
 
-            highlightThemeLink.href = theme === 'light'
-                ? 'https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/styles/base16/gruvbox-light-soft.css'
-                : 'https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/styles/base16/gruvbox-dark-pale.css';
+            document.getElementById('highlight-theme').href =
+                theme === 'light'
+                    ? 'https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/styles/base16/gruvbox-light-soft.css'
+                    : 'https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/styles/base16/gruvbox-dark-pale.css';
 
-            highlightThemeLink.onload = () => {
-                document.querySelectorAll('pre code').forEach((block) => {
-                    hljs.highlightElement(block);
-                });
-            };
-        }
-
-        const savedTheme = localStorage.getItem('theme') || 'dark';
-        applyTheme(savedTheme);
-
-        themeToggle.addEventListener('click', () => {
-            const currentTheme = document.documentElement.getAttribute('data-theme');
-            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-            applyTheme(newTheme);
-        });
-
-
-        function updateThemeIcon(theme) {
-            themeIcon.className = theme === 'light' ? 'fas fa-sun' : 'fas fa-moon';
-        }
-
-        document.getElementById('back-button').addEventListener('click', () => {
-            showPostList();
-        });
-
-        window.addEventListener('popstate', (event) => {
-            const postInfo = getPostFromUrl();
-            const index = event.state && typeof event.state.index !== 'undefined' ? event.state.index : postInfo.value;
-
-            if (index !== null && index >= 0 && index < ALL_POSTS.length) {
-                showPost(index);
-            } else {
-                showPostList();
-            }
-        });
+            document.querySelectorAll('pre code').forEach((block) => hljs.highlightElement(block));
+        };
 
         document.addEventListener('DOMContentLoaded', () => {
             try {
-                /**
-                 *  Limpa o cache de markdown antes de carregar os posts
-                 *  para capturar possiveis alterações nos posts.
-                 */
                 clearMarkdownCache();
+                state.filteredPosts = [...state.allPosts];
+                applyTheme(state.theme);
 
                 setupTagFilters();
                 setupSearch();
 
+                document.getElementById('theme-toggle').addEventListener('click', () =>
+                    applyTheme(state.theme === 'light' ? 'dark' : 'light')
+                );
+
+                document.getElementById('back-button').addEventListener('click', renderPostList);
+
+                window.addEventListener('popstate', (event) => {
+                    const postInfo = getPostFromUrl();
+                    const index = event.state?.index ?? postInfo.value;
+                    if (index !== null && index >= 0 && index < state.allPosts.length) {
+                        showPost(index);
+                    } else {
+                        renderPostList();
+                    }
+                });
+
                 const postInfo = getPostFromUrl();
-                if (postInfo.value !== null && postInfo.value >= 0 && postInfo.value < ALL_POSTS.length) {
+                if (postInfo.value !== null && postInfo.value >= 0 && postInfo.value < state.allPosts.length) {
                     showPost(postInfo.value);
                 } else if (postInfo.value !== null) {
-                    showErrorPage();
+                    renderErrorPage();
                 } else {
-                    showPostList();
+                    renderPostList();
                 }
             } catch (error) {
-                showErrorPage();
+                state.error = 'Erro ao inicializar a aplicação';
+                renderErrorPage();
             }
         });
     </script>
