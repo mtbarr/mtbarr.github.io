@@ -55,7 +55,7 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            font-size: 16px;
+            font-size: 20px;
         }
 
         .container {
@@ -366,7 +366,7 @@
         </div>
 
         <div id="post-view">
-            <button id="back-button">Voltar</button>
+            <button id="back-button" style="display: none;">Voltar</button>
             <div id="post-content"></div>
         </div>
     </div>
@@ -399,7 +399,14 @@
                 date: '2025-04-20',
                 tags: ['java', 'arquitetura', 'segurança'],
                 slug: 'valide-as-bordas-do-sistema'
-            }
+            },
+            {
+                url: 'https://gist.githubusercontent.com/mtbarr/fd58ff41c7e439ce6da90966dd10f6fc/raw/c091ec8125045f3a69afd30fcd7f0678b4b649b4/prototypess.md',
+                title: 'Javismo Cultural',
+                date: '2025-04-20',
+                tags: ['java', 'arquitetura', 'segurança'],
+                slug: 'javismo-cultural'
+            },
         ].sort((a, b) => new Date(b.date) - new Date(a.date));
 
         let filteredPosts = [...ALL_POSTS];
@@ -523,7 +530,7 @@
             const searchInput = document.getElementById('search-input');
             searchInput.addEventListener('input', debounce(() => {
                 filterAndSearchPosts();
-            }, 300));
+            }, 100));
         }
 
         function debounce(func, wait) {
@@ -558,9 +565,11 @@
             const postList = document.querySelector('.timeline');
             const postView = document.getElementById('post-view');
             const noResults = document.querySelector('.no-results');
+            const backButton = document.getElementById('back-button');
 
             document.getElementById('post-list').style.display = 'block';
             postView.style.display = 'none';
+            backButton.style.display = 'none';
 
             updateUrl(null);
 
@@ -575,7 +584,7 @@
                     const postItem = document.createElement('div');
                     postItem.className = 'post-item';
 
-                    const postDate = new Date(post.date);
+                    const postDate = new Date(post.date + 'T12:00:00Z');
                     const formattedDate = postDate.toLocaleDateString('pt-BR', {
                         year: 'numeric',
                         month: 'long',
@@ -624,6 +633,7 @@
             const postList = document.getElementById('post-list');
             const postView = document.getElementById('post-view');
             const postContent = document.getElementById('post-content');
+            const backButton = document.getElementById('back-button');
             const gist = ALL_POSTS[index];
 
             if (!gist) {
@@ -633,6 +643,7 @@
 
             postList.style.display = 'none';
             postView.style.display = 'block';
+            backButton.style.display = 'block';
 
             updateUrl(index);
 
@@ -643,7 +654,7 @@
 
                 const html = marked.parse(markdown);
 
-                const postDate = new Date(gist.date);
+                const postDate = new Date(gist.date + 'T12:00:00Z');
                 const formattedDate = postDate.toLocaleDateString('pt-BR', {
                     year: 'numeric',
                     month: 'long',
