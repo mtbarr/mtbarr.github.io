@@ -29,48 +29,28 @@
     <style>
         :root {
             --bg: #0f1419;
-            /* Deep, bluish-black, like a starry midnight sky */
             --fg: #c7d0d9;
-            /* Cool, pale gray for text, like moonlight */
             --accent: #6b8299;
-            /* Cool blue-gray, inspired by owl feathers in moonlight */
             --secondary: #3b4b5b;
-            /* Dark, muted blue for secondary elements, evoking night shadows */
             --code-bg: #1c2526;
-            /* Dark, bluish-gray for code blocks, like a shadowed tree */
             --border: #2e3b47;
-            /* Cool, medium gray-blue for borders */
             --footer-bg: #151b22;
-            /* Near-black with a blue undertone for footer */
             --tag-bg: #2e3b47;
-            /* Matches border for subtle tag backgrounds */
             --tag-hover: #4a5b6b;
-            /* Lighter blue-gray for tag hover */
             --search-bg: #1c2526;
-            /* Matches code-bg for search input */
         }
 
         [data-theme="light"] {
             --bg: #e6ecef;
-            /* Cool, off-white with a faint blue tint, like dawn */
             --fg: #2e3b47;
-            /* Dark blue-gray for text, high readability */
             --accent: #5b7b99;
-            /* Lighter cool blue, maintaining the owl feather vibe */
             --secondary: #4b5b6b;
-            /* Muted blue for secondary elements, consistent with night theme */
             --code-bg: #d6dde2;
-            /* Pale, cool gray-blue for code blocks */
             --border: #a3b3c2;
-            /* Light blue-gray for borders */
             --footer-bg: #d6dde2;
-            /* Matches code-bg for footer consistency */
             --tag-bg: #a3b3c2;
-            /* Light blue-gray for tags */
             --tag-hover: #8293a3;
-            /* Slightly darker blue-gray for tag hover */
             --search-bg: #d6dde2;
-            /* Matches code-bg for search input */
         }
 
         body {
@@ -148,7 +128,6 @@
             outline: none;
             border-color: var(--accent);
             box-shadow: 0 0 4px var(--accent);
-            /* Subtle glow for focus */
         }
 
         .tag-filters {
@@ -163,7 +142,6 @@
             color: var(--fg);
             padding: 5px 10px;
             border-radius: 12px;
-            /* Rounded for owl-like softness */
             font-size: 0.9em;
             cursor: pointer;
             transition: background-color 0.2s;
@@ -248,7 +226,6 @@
         .post-item:hover {
             background-color: var(--secondary);
             transform: translateY(-2px);
-            /* Subtle lift on hover */
         }
 
         .post-item a {
@@ -295,7 +272,6 @@
             padding: 10px;
             overflow-x: auto;
             border-left: 3px solid var(--accent);
-            /* Accent border for code blocks */
         }
 
         .p {
@@ -500,12 +476,11 @@
             };
         };
 
-        const formatDate = (date) =>
-            new Date(date).toLocaleDateString('pt-BR', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-            });
+        const formatDate = (date) => new Date(date).toLocaleDateString('pt-BR', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+        });
 
         const getPostFromUrl = () => {
             const params = new URLSearchParams(window.location.search);
@@ -523,10 +498,10 @@
         const updateUrl = (index) => {
             try {
                 if (window.location.protocol === 'file:') return;
-                const path =
-                    index !== null && state.allPosts[index]
-                        ? `?slug=${state.allPosts[index].slug}`
-                        : '/';
+                const path = index !== null && state.allPosts[index]
+                    ? `?slug=${state.allPosts[index].slug}`
+                    : '/';
+
                 window.history.pushState({ index }, '', path);
             } catch (error) {
                 console.error('Erro ao atualizar URL:', error);
