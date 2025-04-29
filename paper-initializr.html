@@ -12,8 +12,8 @@
       --bg-primary: #313338;
       --bg-secondary: #2b2d31;
       --bg-input: #1e1f22;
-      --accent: #5865f2;
-      --accent-hover: #4752c4;
+      --accent: #c40003;
+      --accent-hover: #c44747;
       --text: #ffffff;
       --text-muted: #b5bac1;
       --input-padding: 0.7rem 1rem;
@@ -255,187 +255,375 @@
       </div>
     </div>
     
-    <button onclick="generateProject()">Download Plugin Project</button>
+    <button id="generateButton">Download Plugin Project</button>
     
     <div class="info-text">Creates a basic Paper plugin template with the selected configuration and dependencies</div>
   </div>
 
   <script>
-    const availableDependencies = {
-      paper: { 
-        maven: { group: "io.papermc.paper", artifact: "paper-api", version: "@VERSION@-R0.1-SNAPSHOT" },
-        gradle: { notation: "io.papermc.paper:paper-api:@VERSION@-R0.1-SNAPSHOT" }
-      },
-      vault: { 
-        maven: { group: "com.github.MilkBowl", artifact: "VaultAPI", version: "1.7" },
-        gradle: { notation: "com.github.MilkBowl:VaultAPI:1.7" }
-      },
-      protocollib: { 
-        maven: { group: "com.comphenix.protocol", artifact: "ProtocolLib", version: "5.1.0" },
-        gradle: { notation: "com.comphenix.protocol:ProtocolLib:5.1.0" }
-      },
-      placeholderapi: { 
-        maven: { group: "me.clip", artifact: "placeholderapi", version: "2.11.3" },
-        gradle: { notation: "me.clip:placeholderapi:2.11.3" }
-      },
-      worldedit: { 
-        maven: { group: "com.sk89q.worldedit", artifact: "worldedit-bukkit", version: "7.2.12" },
-        gradle: { notation: "com.sk89q.worldedit:worldedit-bukkit:7.2.12" }
-      },
-      worldguard: { 
-        maven: { group: "com.sk89q.worldguard", artifact: "worldguard-bukkit", version: "7.0.7" },
-        gradle: { notation: "com.sk89q.worldguard:worldguard-bukkit:7.0.7" }
+    /**
+     * Dependency class - represents a project dependency
+     */
+    class Dependency {
+      constructor(id, label, mavenGroup, mavenArtifact, mavenVersion, gradleNotation) {
+        this.id = id;
+        this.label = label;
+        this.mavenGroup = mavenGroup;
+        this.mavenArtifact = mavenArtifact;
+        this.mavenVersion = mavenVersion;
+        this.gradleNotation = gradleNotation;
       }
-    };
-
-    function getValues() {
-      return {
-        pluginName: document.getElementById('pluginName').value || 'MyPlugin',
-        groupId: document.getElementById('groupId').value || 'com.example',
-        author: document.getElementById('author').value || 'Unknown',
-        language: document.getElementById('language').value,
-        buildTool: document.getElementById('buildTool').value,
-        version: document.getElementById('version').value
-      };
+      
+      /**
+       * Returns the Maven dependency XML
+       * @param {string} version - Minecraft version to replace placeholders with
+       * @returns {string} Maven dependency XML
+       */
+      toMavenDependency(version) {
+        const resolvedVersion = this.mavenVersion.replace('@VERSION@', version);
+        return `    <dependency>
+      <groupId>${this.mavenGroup}</groupId>
+      <artifactId>${this.mavenArtifact}</artifactId>
+      <version>${resolvedVersion}</version>
+      <scope>provided</scope>
+    </dependency>`;
+      }
+      
+      /**
+       * Returns the Gradle dependency notation
+       * @param {string} version - Minecraft version to replace placeholders with
+       * @returns {string} Gradle dependency notation
+       */
+      toGradleNotation(version) {
+        return this.gradleNotation.replace('@VERSION@', version);
+      }
     }
 
-    function createPluginYml({ pluginName, groupId, author, version }) {
-      let dependencies = "";
-      const selectedDeps = getSelectedDependencies().filter(dep => dep !== 'paper');
-      
-      if (selectedDeps.length > 0) {
-        dependencies = "\nsoftdepend: [" + selectedDeps.map(dep => {
-          if (dep === 'vault') return 'Vault';
-          if (dep === 'protocollib') return 'ProtocolLib';
-          if (dep === 'placeholderapi') return 'PlaceholderAPI';
-          if (dep === 'worldedit') return 'WorldEdit';
-          if (dep === 'worldguard') return 'WorldGuard';
-          return dep;
-        }).join(', ') + "]";
+    /**
+     * DependencyManager - manages all available dependencies
+     */
+    class DependencyManager {
+      constructor() {
+        this.dependencies = new Map();
+        this.initDependencies();
       }
       
-      return `name: ${pluginName}
+      /**
+       * Initialize the available dependencies
+       */
+      initDependencies() {
+        this.addDependency(new Dependency(
+          'paper', 'Paper API',
+          'io.papermc.paper', 'paper-api', '@VERSION@-R0.1-SNAPSHOT',
+          'io.papermc.paper:paper-api:@VERSION@-R0.1-SNAPSHOT'
+        ));
+        
+        this.addDependency(new Dependency(
+          'vault', 'Vault API',
+          'com.github.MilkBowl', 'VaultAPI', '1.7',
+          'com.github.MilkBowl:VaultAPI:1.7'
+        ));
+        
+        this.addDependency(new Dependency(
+          'protocollib', 'ProtocolLib',
+          'com.comphenix.protocol', 'ProtocolLib', '5.1.0',
+          'com.comphenix.protocol:ProtocolLib:5.1.0'
+        ));
+        
+        this.addDependency(new Dependency(
+          'placeholderapi', 'PlaceholderAPI',
+          'me.clip', 'placeholderapi', '2.11.3',
+          'me.clip:placeholderapi:2.11.3'
+        ));
+        
+        this.addDependency(new Dependency(
+          'worldedit', 'WorldEdit',
+          'com.sk89q.worldedit', 'worldedit-bukkit', '7.2.12',
+          'com.sk89q.worldedit:worldedit-bukkit:7.2.12'
+        ));
+        
+        this.addDependency(new Dependency(
+          'worldguard', 'WorldGuard',
+          'com.sk89q.worldguard', 'worldguard-bukkit', '7.0.7',
+          'com.sk89q.worldguard:worldguard-bukkit:7.0.7'
+        ));
+      }
+      
+      /**
+       * Add a dependency to the manager
+       * @param {Dependency} dependency - The dependency to add
+       */
+      addDependency(dependency) {
+        this.dependencies.set(dependency.id, dependency);
+      }
+      
+      /**
+       * Get a dependency by ID
+       * @param {string} id - The dependency ID
+       * @returns {Dependency} The dependency
+       */
+      getDependency(id) {
+        return this.dependencies.get(id);
+      }
+      
+      /**
+       * Get all selected dependencies
+       * @returns {Array<string>} Array of selected dependency IDs
+       */
+      getSelectedDependencyIds() {
+        const dependencies = ['paper']; // Paper is always included
+        
+        // Add selected checkboxes
+        for (const depId of ['vault', 'protocollib', 'placeholderapi', 'worldedit', 'worldguard']) {
+          if (document.getElementById(depId).checked) {
+            dependencies.push(depId);
+          }
+        }
+        
+        return dependencies;
+      }
+      
+      /**
+       * Get selected dependencies as objects
+       * @returns {Array<Dependency>} Array of selected dependency objects
+       */
+      getSelectedDependencies() {
+        return this.getSelectedDependencyIds()
+          .map(id => this.getDependency(id))
+          .filter(dep => dep !== undefined);
+      }
+    }
+
+    /**
+     * PluginProject - represents the plugin project
+     */
+    class PluginProject {
+      /**
+       * @param {object} config - Project configuration
+       * @param {DependencyManager} dependencyManager - The dependency manager
+       */
+      constructor(config, dependencyManager) {
+        this.config = config;
+        this.dependencyManager = dependencyManager;
+        this.zip = new JSZip();
+      }
+      
+      /**
+       * Generate the plugin.yml content
+       * @returns {string} The plugin.yml content
+       */
+      createPluginYml() {
+        const { pluginName, groupId, author, version } = this.config;
+        let dependencies = "";
+        
+        const selectedDeps = this.dependencyManager.getSelectedDependencyIds()
+          .filter(dep => dep !== 'paper');
+        
+        if (selectedDeps.length > 0) {
+          dependencies = "\nsoftdepend: [" + selectedDeps.map(dep => {
+            if (dep === 'vault') return 'Vault';
+            if (dep === 'protocollib') return 'ProtocolLib';
+            if (dep === 'placeholderapi') return 'PlaceholderAPI';
+            if (dep === 'worldedit') return 'WorldEdit';
+            if (dep === 'worldguard') return 'WorldGuard';
+            return dep;
+          }).join(', ') + "]";
+        }
+        
+        return `name: ${pluginName}
 main: ${groupId}.${pluginName}
 author: ${author}
 version: 1.0
 api-version: ${version}${dependencies}`;
-    }
-
-    function createMainClass({ pluginName, groupId, language }) {
-      const selectedDeps = getSelectedDependencies();
-      let imports = [`import org.bukkit.plugin.java.JavaPlugin`];
-      let setupCode = [];
-      
-      if (selectedDeps.includes('vault')) {
-        imports.push(language === 'java' 
-          ? `import net.milkbowl.vault.economy.Economy`
-          : `import net.milkbowl.vault.economy.Economy`);
       }
       
-      if (selectedDeps.includes('placeholderapi')) {
-        imports.push(language === 'java'
-          ? `import me.clip.placeholderapi.PlaceholderAPI`
-          : `import me.clip.placeholderapi.PlaceholderAPI`);
-      }
-      
-      if (selectedDeps.includes('vault')) {
+      /**
+       * Create the main class content
+       * @returns {string} The main class content
+       */
+      createMainClass() {
+        const { pluginName, groupId, language } = this.config;
+        const selectedDeps = this.dependencyManager.getSelectedDependencyIds();
+        let imports = [`import org.bukkit.plugin.java.JavaPlugin`];
+        let setupCode = [];
+        
+        if (selectedDeps.includes('vault')) {
+          imports.push(language === 'java' 
+            ? `import net.milkbowl.vault.economy.Economy`
+            : `import net.milkbowl.vault.economy.Economy`);
+        }
+        
+        if (selectedDeps.includes('placeholderapi')) {
+          imports.push(language === 'java'
+            ? `import me.clip.placeholderapi.PlaceholderAPI`
+            : `import me.clip.placeholderapi.PlaceholderAPI`);
+        }
+        
+        if (selectedDeps.includes('vault')) {
+          if (language === 'java') {
+            setupCode.push(`        // Setup Vault Economy\n        if (getServer().getPluginManager().getPlugin("Vault") != null) {\n            getLogger().info("Vault found, setting up economy...");\n            // Uncomment to setup economy\n            // Economy econ = getServer().getServicesManager().getRegistration(Economy.class).getProvider();\n        }`);
+          } else {
+            setupCode.push(`        // Setup Vault Economy\n        if (server.pluginManager.getPlugin("Vault") != null) {\n            logger.info("Vault found, setting up economy...")\n            // Uncomment to setup economy\n            // val econ = server.servicesManager.getRegistration(Economy::class.java)?.provider\n        }`);
+          }
+        }
+        
+        const allImports = language === 'java'
+          ? imports.join(';\n') + ';\n\n'
+          : imports.join('\n') + '\n\n';
+        
+        const allSetupCode = setupCode.length > 0 
+          ? '\n' + setupCode.join('\n\n') + '\n    '
+          : '';
+        
         if (language === 'java') {
-          setupCode.push(`        // Setup Vault Economy\n        if (getServer().getPluginManager().getPlugin("Vault") != null) {\n            getLogger().info("Vault found, setting up economy...");\n            // Uncomment to setup economy\n            // Economy econ = getServer().getServicesManager().getRegistration(Economy.class).getProvider();\n        }`);
+          return `package ${groupId};\n\n${allImports}public class ${pluginName} extends JavaPlugin {\n    @Override\n    public void onEnable() {${allSetupCode}\n        getLogger().info("${pluginName} has been enabled!");\n    }\n\n    @Override\n    public void onDisable() {\n        getLogger().info("${pluginName} has been disabled.");\n    }\n}`;
         } else {
-          setupCode.push(`        // Setup Vault Economy\n        if (server.pluginManager.getPlugin("Vault") != null) {\n            logger.info("Vault found, setting up economy...")\n            // Uncomment to setup economy\n            // val econ = server.servicesManager.getRegistration(Economy::class.java)?.provider\n        }`);
+          return `package ${groupId}\n\n${allImports}class ${pluginName} : JavaPlugin() {\n    override fun onEnable() {${allSetupCode}\n        logger.info("${pluginName} has been enabled!")\n    }\n\n    override fun onDisable() {\n        logger.info("${pluginName} has been disabled.")\n    }\n}`;
         }
       }
       
-      const allImports = language === 'java'
-        ? imports.join(';\n') + ';\n\n'
-        : imports.join('\n') + '\n\n';
-      
-      const allSetupCode = setupCode.length > 0 
-        ? '\n' + setupCode.join('\n\n') + '\n    '
-        : '';
-      
-      if (language === 'java') {
-        return `package ${groupId};\n\n${allImports}public class ${pluginName} extends JavaPlugin {\n    @Override\n    public void onEnable() {${allSetupCode}\n        getLogger().info("${pluginName} has been enabled!");\n    }\n\n    @Override\n    public void onDisable() {\n        getLogger().info("${pluginName} has been disabled.");\n    }\n}`;
-      } else {
-        return `package ${groupId}\n\n${allImports}class ${pluginName} : JavaPlugin() {\n    override fun onEnable() {${allSetupCode}\n        logger.info("${pluginName} has been enabled!")\n    }\n\n    override fun onDisable() {\n        logger.info("${pluginName} has been disabled.")\n    }\n}`;
-      }
-    }
-
-    function getSelectedDependencies() {
-      const dependencies = ['paper'];
-      
-      if (document.getElementById('vault').checked) dependencies.push('vault');
-      if (document.getElementById('protocollib').checked) dependencies.push('protocollib');
-      if (document.getElementById('placeholderapi').checked) dependencies.push('placeholderapi');
-      if (document.getElementById('worldedit').checked) dependencies.push('worldedit');
-      if (document.getElementById('worldguard').checked) dependencies.push('worldguard');
-      
-      return dependencies;
-    }
-    
-    function getDependencies(buildTool, version) {
-      const selectedDeps = getSelectedDependencies();
-      let result = [];
-      
-      if (buildTool === 'maven') {
-        for (const depId of selectedDeps) {
-          const dep = availableDependencies[depId].maven;
-          result.push(`    <dependency>\n      <groupId>${dep.group}</groupId>\n      <artifactId>${dep.artifact}</artifactId>\n      <version>${dep.version.replace('@VERSION@', version)}</version>\n      <scope>provided</scope>\n    </dependency>`);
+      /**
+       * Create the build file content
+       * @returns {string} The build file content
+       */
+      createBuildFile() {
+        const { buildTool, groupId, pluginName, version } = this.config;
+        const selectedDeps = this.dependencyManager.getSelectedDependencies();
+        
+        if (buildTool === 'maven') {
+          const deps = selectedDeps
+            .map(dep => dep.toMavenDependency(version))
+            .join('\n');
+          
+          return `<?xml version="1.0" encoding="UTF-8"?>\n<project xmlns="http://maven.apache.org/POM/4.0.0"\n         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"\n         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">\n  <modelVersion>4.0.0</modelVersion>\n  <groupId>${groupId}</groupId>\n  <artifactId>${pluginName.toLowerCase()}</artifactId>\n  <version>1.0</version>\n  <name>${pluginName}</name>\n  <dependencies>\n${deps}\n  </dependencies>\n</project>`;
+        } else {
+          // Gradle build files
+          const deps = selectedDeps.map(dep => dep.toGradleNotation(version));
+          
+          let joinedDeps;
+          if (buildTool === 'gradle-kts') {
+            joinedDeps = deps.map(d => `    compileOnly("${d}")`).join('\n');
+            
+            return `plugins {\n    java\n}\n\ngroup = "${groupId}"\nversion = "1.0"\n\nrepositories {\n    mavenCentral()\n    maven(url = "https://repo.papermc.io/repository/maven-public/")\n}\n\ndependencies {\n${joinedDeps}\n}`;
+          } else {
+            joinedDeps = deps.map(d => `    compileOnly '${d}'`).join('\n');
+            
+            return `plugins {\n    id 'java'\n}\n\ngroup = '${groupId}'\nversion = '1.0'\n\nrepositories {\n    mavenCentral()\n    maven { url = 'https://repo.papermc.io/repository/maven-public/' }\n}\n\ndependencies {\n${joinedDeps}\n}`;
+          }
         }
-        return result.join('\n');
-      } else {
-        for (const depId of selectedDeps) {
-          const notation = availableDependencies[depId].gradle.notation.replace('@VERSION@', version);
-          result.push(notation);
+      }
+      
+      /**
+       * Generate README file
+       * @returns {string} The README content
+       */
+      createReadme() {
+        const { pluginName, author, buildTool } = this.config;
+        
+        return `# ${pluginName}\n\nA Minecraft Paper plugin created with PaperInitializr.\n\n## Getting Started\n\nBuild the plugin using ${buildTool === 'maven' ? 'Maven' : 'Gradle'}.\n\n## Author\n\n${author}`;
+      }
+      
+      /**
+       * Add all files to the zip
+       */
+      addFilesToZip() {
+        const { pluginName, groupId, language, buildTool } = this.config;
+        const mainPath = groupId.replace(/\./g, "/");
+        const fileExt = language === 'java' ? 'java' : 'kt';
+        
+        // Add README
+        this.zip.file("README.md", this.createReadme());
+        
+        // Add plugin.yml to resources directory
+        this.zip.file("src/main/resources/plugin.yml", this.createPluginYml());
+        
+        // Add main class file
+        const srcMainPath = `src/main/${language}/${mainPath}`;
+        this.zip.file(`${srcMainPath}/${pluginName}.${fileExt}`, this.createMainClass());
+        
+        // Add build file based on the selected build tool
+        if (buildTool === 'maven') {
+          this.zip.file("pom.xml", this.createBuildFile());
+        } else if (buildTool === 'gradle') {
+          this.zip.file("build.gradle", this.createBuildFile());
+        } else if (buildTool === 'gradle-kts') {
+          this.zip.file("build.gradle.kts", this.createBuildFile());
         }
-        return result;
+      }
+      
+      /**
+       * Generate and download the project
+       */
+      async generate() {
+        this.addFilesToZip();
+        
+        const blob = await this.zip.generateAsync({ type: "blob" });
+        saveAs(blob, `${this.config.pluginName.toLowerCase()}-plugin.zip`);
       }
     }
 
-    function createBuildFile({ buildTool, groupId, pluginName, version }) {
-      const deps = getDependencies(buildTool, version);
-      if (buildTool === 'maven') {
-        return `<?xml version="1.0" encoding="UTF-8"?>\n<project xmlns="http://maven.apache.org/POM/4.0.0"\n         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"\n         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">\n  <modelVersion>4.0.0</modelVersion>\n  <groupId>${groupId}</groupId>\n  <artifactId>${pluginName}</artifactId>\n  <version>1.0</version>\n  <name>${pluginName}</name>\n  <dependencies>\n${deps}\n  </dependencies>\n</project>`;
+    /**
+     * FormManager - manages the form inputs and validation
+     */
+    class FormManager {
+      constructor() {
+        this.dependencyManager = new DependencyManager();
       }
-      const joinedDeps = buildTool === 'gradle-kts'
-        ? deps.map(d => `    compileOnly(\"${d}\")`).join('\n')
-        : deps.map(d => `    compileOnly '${d}'`).join('\n');
-
-      return buildTool === 'gradle'
-        ? `plugins {\n    id 'java'\n}\n\ngroup = '${groupId}'\nversion = '1.0'\n\nrepositories {\n    mavenCentral()\n    maven { url = 'https://repo.papermc.io/repository/maven-public/' }\n}\n\ndependencies {\n${joinedDeps}\n}`
-        : `plugins {\n    java\n}\n\ngroup = \"${groupId}\"\nversion = \"1.0\"\n\nrepositories {\n    mavenCentral()\n    maven(\"https://repo.papermc.io/repository/maven-public/\")\n}\n\ndependencies {\n${joinedDeps}\n}`;
+      
+      /**
+       * Get all form values
+       * @returns {object} Form values
+       */
+      getFormValues() {
+        return {
+          pluginName: document.getElementById('pluginName').value || 'MyPlugin',
+          groupId: document.getElementById('groupId').value || 'com.example',
+          author: document.getElementById('author').value || 'Unknown',
+          language: document.getElementById('language').value,
+          buildTool: document.getElementById('buildTool').value,
+          version: document.getElementById('version').value
+        };
+      }
+      
+      /**
+       * Validate form input
+       * @returns {boolean} True if valid, false otherwise
+       */
+      validateForm() {
+        const values = this.getFormValues();
+        
+        if (!values.pluginName || !values.groupId || !values.author) {
+          alert("Please fill in all required fields");
+          return false;
+        }
+        
+        return true;
+      }
+      
+      /**
+       * Generate the project
+       */
+      generateProject() {
+        if (!this.validateForm()) return;
+        
+        const config = this.getFormValues();
+        const project = new PluginProject(config, this.dependencyManager);
+        project.generate();
+      }
     }
 
-    function generateProject() {
-      const data = getValues();
+    // Initialize the application
+    document.addEventListener('DOMContentLoaded', () => {
+      const formManager = new FormManager();
       
-      if (!data.pluginName || !data.groupId || !data.author) {
-        alert("Please fill in all required fields");
-        return;
-      }
-      
-      const mainPath = data.groupId.replace(/\./g, "/");
-      const fileExt = data.language === 'java' ? 'java' : 'kt';
-      const mainCode = createMainClass(data);
-      const pluginYml = createPluginYml(data);
-      const buildFile = createBuildFile(data);
-
-      const zip = new JSZip();
-      zip.file("README.md", `# ${data.pluginName}\n\nA Minecraft Paper plugin created with PaperInitializr.\n\n## Getting Started\n\nBuild the plugin using ${data.buildTool === 'maven' ? 'Maven' : 'Gradle'}.\n\n## Author\n\n${data.author}`);
-      zip.file("plugin.yml", pluginYml);
-      
-      const srcMainPath = `src/main/${data.language}/${mainPath}`;
-      zip.file(`${srcMainPath}/${data.pluginName}.${fileExt}`, mainCode);
-      zip.file(data.buildTool === 'maven' ? "pom.xml" : (data.buildTool === 'gradle' ? "build.gradle" : "build.gradle.kts"), buildFile);
-
-      zip.generateAsync({ type: "blob" }).then(content => {
-        saveAs(content, `${data.pluginName}-plugin.zip`);
+      // Setup button click handler
+      document.getElementById('generateButton').addEventListener('click', () => {
+        formManager.generateProject();
       });
-    }
-    
-    window.onload = function() {
+      
+      // Focus on the first input field
       document.getElementById('pluginName').focus();
-    };
+    });
   </script>
 </body>
 </html>
