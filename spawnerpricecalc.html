@@ -13,7 +13,7 @@
 
         body {
             font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
-            background-color: #2f3136;
+            background-color: #36393f;
             color: #dcddde;
             padding: 20px;
             line-height: 1.6;
@@ -25,18 +25,18 @@
         }
 
         header {
-            background-color: #202225;
+            background-color: #2f3136;
             padding: 24px;
             border-radius: 8px;
             margin-bottom: 24px;
-            border: 1px solid #1e1f22;
+            border-left: 4px solid #5865f2;
         }
 
         h1 {
             color: #ffffff;
-            font-size: 28px;
-            font-weight: 600;
+            font-size: 24px;
             margin-bottom: 8px;
+            font-weight: 600;
         }
 
         .subtitle {
@@ -45,41 +45,38 @@
         }
 
         .controls {
-            background-color: #36393f;
-            padding: 20px;
+            background-color: #2f3136;
+            padding: 16px;
             border-radius: 8px;
-            margin-bottom: 20px;
+            margin-bottom: 24px;
             display: flex;
             gap: 16px;
             align-items: center;
             flex-wrap: wrap;
-            border: 1px solid #2f3136;
         }
 
         .control-group {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
         }
 
         label {
             color: #b9bbbe;
-            font-size: 13px;
-            font-weight: 500;
+            font-size: 12px;
             text-transform: uppercase;
+            font-weight: 600;
             letter-spacing: 0.5px;
         }
 
         input[type="number"] {
-            background-color: #202225;
-            border: 1px solid #1e1f22;
+            background-color: #40444b;
+            border: 1px solid #202225;
             color: #dcddde;
             padding: 10px 12px;
             border-radius: 4px;
             font-family: inherit;
-            font-size: 15px;
-            width: 180px;
-            transition: border-color 0.2s;
+            font-size: 14px;
         }
 
         input[type="number"]:focus {
@@ -91,7 +88,7 @@
             background-color: #5865f2;
             color: #ffffff;
             border: none;
-            padding: 10px 20px;
+            padding: 10px 16px;
             border-radius: 4px;
             cursor: pointer;
             font-family: inherit;
@@ -110,10 +107,9 @@
         }
 
         .table-container {
-            background-color: #36393f;
+            background-color: #2f3136;
             border-radius: 8px;
             overflow: hidden;
-            border: 1px solid #2f3136;
         }
 
         table {
@@ -126,18 +122,22 @@
         }
 
         th {
-            padding: 16px;
+            padding: 12px 16px;
             text-align: left;
             color: #b9bbbe;
-            font-size: 13px;
-            font-weight: 600;
+            font-size: 12px;
             text-transform: uppercase;
+            font-weight: 600;
             letter-spacing: 0.5px;
-            border-bottom: 2px solid #1e1f22;
+            border-bottom: 2px solid #40444b;
+        }
+
+        th:last-child {
+            text-align: right;
         }
 
         tbody tr {
-            border-bottom: 1px solid #2f3136;
+            border-bottom: 1px solid #40444b;
             transition: background-color 0.15s;
         }
 
@@ -151,54 +151,121 @@
 
         td {
             padding: 16px;
-            color: #dcddde;
-            font-size: 15px;
+            font-size: 14px;
+        }
+
+        td:last-child {
+            text-align: right;
         }
 
         .spawner-name {
-            font-weight: 600;
             color: #ffffff;
+            font-weight: 600;
         }
 
-        .price {
+        .price-input {
+            background-color: #40444b;
+            border: 1px solid #202225;
             color: #faa61a;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            width: 120px;
+        }
+
+        .price-input:focus {
+            outline: none;
+            border-color: #5865f2;
+        }
+
+        .drops-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .drop-item {
+            background-color: #40444b;
+            padding: 8px 12px;
+            border-radius: 4px;
+            border-left: 3px solid #5865f2;
+        }
+
+        .drop-name {
+            color: #ffffff;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .drop-inputs {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .drop-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1;
+        }
+
+        .drop-input-label {
+            color: #b9bbbe;
+            font-size: 10px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .drop-input {
+            background-color: #202225;
+            border: 1px solid #36393f;
+            color: #dcddde;
+            padding: 6px 8px;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 12px;
+            width: 100%;
+        }
+
+        .drop-input:focus {
+            outline: none;
+            border-color: #5865f2;
+        }
+
+        .no-drops {
+            color: #ed4245;
+            font-style: italic;
         }
 
         .revenue {
-            color: #57f287;
-        }
-
-        .roi-positive {
             color: #3ba55d;
             font-weight: 600;
         }
 
-        .roi-neutral {
+        .roi-excellent {
+            color: #3ba55d;
+            font-weight: 600;
+        }
+
+        .roi-good {
             color: #faa61a;
             font-weight: 600;
         }
 
-        .roi-negative {
+        .roi-poor {
             color: #ed4245;
             font-weight: 600;
         }
 
-        .footer {
-            margin-top: 24px;
-            text-align: center;
-            color: #72767d;
-            font-size: 13px;
+        .roi-infinite {
+            color: #ed4245;
+            font-weight: 600;
         }
 
         @media (max-width: 768px) {
-            body {
-                padding: 12px;
-            }
-
-            h1 {
-                font-size: 22px;
-            }
-
             .controls {
                 flex-direction: column;
                 align-items: stretch;
@@ -209,11 +276,15 @@
             }
 
             table {
-                font-size: 13px;
+                font-size: 12px;
             }
 
             th, td {
-                padding: 12px 8px;
+                padding: 8px;
+            }
+
+            .drop-inputs {
+                flex-direction: column;
             }
         }
     </style>
@@ -221,16 +292,16 @@
 <body>
     <div class="container">
         <header>
-            <h1>⛏️ Minecraft Spawner Calculator</h1>
+            <h1>Minecraft Spawner Calculator</h1>
             <p class="subtitle">Calcule o ROI dos seus spawners</p>
         </header>
 
         <div class="controls">
             <div class="control-group">
-                <label for="hoursInput">Horas de Farm</label>
-                <input type="number" id="hoursInput" value="1" min="0.1" step="0.1">
+                <label for="hoursPerDay">Horas jogadas por dia</label>
+                <input type="number" id="hoursPerDay" value="8" min="0" max="24" step="0.5">
             </div>
-            <button onclick="exportToMarkdown()">📋 Exportar para Markdown</button>
+            <button onclick="exportToMarkdown()">Exportar para Markdown</button>
         </div>
 
         <div class="table-container">
@@ -239,91 +310,238 @@
                     <tr>
                         <th>Spawner</th>
                         <th>Preço</th>
-                        <th>Drop</th>
-                        <th>Receita/h</th>
+                        <th>Drops</th>
+                        <th>Receita/hora</th>
                         <th>ROI</th>
                     </tr>
                 </thead>
                 <tbody id="spawnerTable">
-                     Será preenchido via JavaScript 
                 </tbody>
             </table>
-        </div>
-
-        <div class="footer">
-            <p>Dados atualizados • Calcule seu investimento ideal</p>
         </div>
     </div>
 
     <script>
         const spawners = [
-            { name: 'Vaca', price: 75000, drop: 'Couro', dropPrice: 8, dropsPerHour: 1800 },
-            { name: 'Galinha', price: 75000, drop: 'Pena', dropPrice: 5, dropsPerHour: 1800 },
-            { name: 'Porco', price: 100000, drop: 'Carne de Porco', dropPrice: 10, dropsPerHour: 1800 },
-            { name: 'Ovelha', price: 100000, drop: 'Lã', dropPrice: 15, dropsPerHour: 1800 },
-            { name: 'Cogumelo', price: 125000, drop: 'Cogumelo', dropPrice: 20, dropsPerHour: 1800 },
-            { name: 'Aranha', price: 150000, drop: 'Linha', dropPrice: 12, dropsPerHour: 1800 },
-            { name: 'Zumbi', price: 200000, drop: 'Carne Podre', dropPrice: 15, dropsPerHour: 1800 },
-            { name: 'Esqueleto', price: 250000, drop: 'Osso', dropPrice: 20, dropsPerHour: 1800 },
-            { name: 'Slime', price: 300000, drop: 'Slimeball', dropPrice: 25, dropsPerHour: 1800 },
-            { name: 'Bruxa', price: 400000, drop: 'Redstone', dropPrice: 30, dropsPerHour: 1800 },
-            { name: 'Blaze', price: 500000, drop: 'Blaze Rod', dropPrice: 40, dropsPerHour: 1800 },
-            { name: 'Enderman', price: 750000, drop: 'Ender Pearl', dropPrice: 50, dropsPerHour: 1800 },
-            { name: 'Golem de Ferro', price: 1000000, drop: 'Ferro', dropPrice: 60, dropsPerHour: 1800 },
-            { name: 'Wither Skeleton', price: 1500000, drop: 'Wither Skull', dropPrice: 100, dropsPerHour: 900 }
+            {
+                name: "Vaca",
+                price: 75000,
+                drops: [
+                    { item: "Couro", price: 0.35, rate: 400 },
+                    { item: "Carne", price: 0.35, rate: 400 }
+                ]
+            },
+            {
+                name: "Aranha",
+                price: 100000,
+                drops: [
+                    { item: "Olho", price: 1.00, rate: 300 },
+                    { item: "Linha", price: 1.00, rate: 300 }
+                ]
+            },
+            {
+                name: "Slime",
+                price: 150000,
+                drops: [
+                    { item: "Bola de Slime", price: 3.00, rate: 300 }
+                ]
+            },
+            {
+                name: "Skeleton",
+                price: 200000,
+                drops: [
+                    { item: "Osso", price: 3.00, rate: 500 }
+                ]
+            },
+            {
+                name: "Creeper",
+                price: 250000,
+                drops: [
+                    { item: "Pólvora", price: 3.75, rate: 400 }
+                ]
+            },
+            {
+                name: "Breeze",
+                price: 350000,
+                drops: []
+            },
+            {
+                name: "Blaze",
+                price: 500000,
+                drops: []
+            },
+            {
+                name: "Pigman",
+                price: 500000,
+                drops: []
+            },
+            {
+                name: "Enderman",
+                price: 750000,
+                drops: []
+            },
+            {
+                name: "Golem",
+                price: 2000000,
+                drops: [
+                    { item: "Barra de Ferro", price: 10.00, rate: 600 }
+                ]
+            }
         ];
 
         function formatCurrency(value) {
-            return `$${value.toLocaleString('pt-BR')}`;
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL',
+                minimumFractionDigits: 2
+            }).format(value);
         }
 
-        function formatHours(hours) {
-            if (hours < 1) {
-                return `${Math.round(hours * 60)}min`;
-            }
-            return `${hours.toFixed(1)}h`;
+        function formatNumber(value) {
+            return new Intl.NumberFormat('pt-BR').format(value);
         }
 
-        function getROIClass(hours) {
-            if (hours <= 24) return 'roi-positive';
-            if (hours <= 168) return 'roi-neutral';
-            return 'roi-negative';
+        function calculateRevenue(spawner) {
+            if (spawner.drops.length === 0) return 0;
+            return spawner.drops.reduce((total, drop) => {
+                return total + (drop.price * drop.rate);
+            }, 0);
         }
 
-        function calculateAndRender() {
-            const hours = parseFloat(document.getElementById('hoursInput').value) || 1;
+        function calculateROI(spawner) {
+            const revenue = calculateRevenue(spawner);
+            if (revenue === 0) return Infinity;
+            return spawner.price / revenue;
+        }
+
+        function getROIClass(roi) {
+            if (roi === Infinity) return 'roi-infinite';
+            if (roi < 150) return 'roi-excellent';
+            if (roi < 250) return 'roi-good';
+            return 'roi-poor';
+        }
+
+        function formatROI(roi) {
+            if (roi === Infinity) return '∞ (sem ROI)';
+            return `${roi.toFixed(1)}h`;
+        }
+
+        function updateSpawner(spawnerIndex) {
+            renderTable();
+        }
+
+        function updateDrop(spawnerIndex, dropIndex, field, value) {
+            spawners[spawnerIndex].drops[dropIndex][field] = parseFloat(value) || 0;
+            renderTable();
+        }
+
+        function updatePrice(spawnerIndex, value) {
+            spawners[spawnerIndex].price = parseFloat(value) || 0;
+            renderTable();
+        }
+
+        function renderTable() {
             const tbody = document.getElementById('spawnerTable');
             tbody.innerHTML = '';
 
-            spawners.forEach(spawner => {
-                const revenuePerHour = spawner.dropsPerHour * spawner.dropPrice;
-                const totalRevenue = revenuePerHour * hours;
-                const hoursToROI = spawner.price / revenuePerHour;
+            spawners.forEach((spawner, spawnerIndex) => {
+                const revenue = calculateRevenue(spawner);
+                const roi = calculateROI(spawner);
+                const roiClass = getROIClass(roi);
 
                 const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td class="spawner-name">${spawner.name}</td>
-                    <td class="price">${formatCurrency(spawner.price)}</td>
-                    <td>${spawner.drop} (${formatCurrency(spawner.dropPrice)})</td>
-                    <td class="revenue">${formatCurrency(revenuePerHour)}</td>
-                    <td class="${getROIClass(hoursToROI)}">${formatHours(hoursToROI)}</td>
+                
+                // Spawner name
+                const nameCell = document.createElement('td');
+                nameCell.innerHTML = `<span class="spawner-name">${spawner.name}</span>`;
+                row.appendChild(nameCell);
+
+                // Price (editable)
+                const priceCell = document.createElement('td');
+                priceCell.innerHTML = `
+                    <input type="number" 
+                           class="price-input" 
+                           value="${spawner.price}" 
+                           onchange="updatePrice(${spawnerIndex}, this.value)"
+                           step="1000">
                 `;
+                row.appendChild(priceCell);
+
+                // Drops (editable)
+                const dropsCell = document.createElement('td');
+                if (spawner.drops.length === 0) {
+                    dropsCell.innerHTML = '<span class="no-drops">Sem drops</span>';
+                } else {
+                    const dropsContainer = document.createElement('div');
+                    dropsContainer.className = 'drops-container';
+                    
+                    spawner.drops.forEach((drop, dropIndex) => {
+                        const dropItem = document.createElement('div');
+                        dropItem.className = 'drop-item';
+                        dropItem.innerHTML = `
+                            <div class="drop-name">${drop.item}</div>
+                            <div class="drop-inputs">
+                                <div class="drop-input-group">
+                                    <span class="drop-input-label">Preço</span>
+                                    <input type="number" 
+                                           class="drop-input" 
+                                           value="${drop.price}" 
+                                           onchange="updateDrop(${spawnerIndex}, ${dropIndex}, 'price', this.value)"
+                                           step="0.01">
+                                </div>
+                                <div class="drop-input-group">
+                                    <span class="drop-input-label">Drops/h</span>
+                                    <input type="number" 
+                                           class="drop-input" 
+                                           value="${drop.rate}" 
+                                           onchange="updateDrop(${spawnerIndex}, ${dropIndex}, 'rate', this.value)"
+                                           step="10">
+                                </div>
+                            </div>
+                        `;
+                        dropsContainer.appendChild(dropItem);
+                    });
+                    
+                    dropsCell.appendChild(dropsContainer);
+                }
+                row.appendChild(dropsCell);
+
+                // Revenue
+                const revenueCell = document.createElement('td');
+                revenueCell.innerHTML = `<span class="revenue">${formatCurrency(revenue)}</span>`;
+                row.appendChild(revenueCell);
+
+                // ROI
+                const roiCell = document.createElement('td');
+                roiCell.innerHTML = `<span class="${roiClass}">${formatROI(roi)}</span>`;
+                row.appendChild(roiCell);
+
                 tbody.appendChild(row);
             });
         }
 
-        // dps dar um jeito de mandar isso pra pdf.
         function exportToMarkdown() {
-            const hours = parseFloat(document.getElementById('hoursInput').value) || 1;
+            const hoursPerDay = parseFloat(document.getElementById('hoursPerDay').value) || 8;
+            
             let markdown = '# Minecraft Spawner Calculator\n\n';
-            markdown += `**Horas de Farm:** ${hours}h\n\n`;
-            markdown += '| Spawner | Preço | Drop | Receita/h | ROI |\n';
-            markdown += '|---------|-------|------|-----------|-----|\n';
+            markdown += `**Horas jogadas por dia:** ${hoursPerDay}h\n\n`;
+            markdown += '| Spawner | Preço | Drops | Receita/hora | ROI |\n';
+            markdown += '|---------|-------|-------|--------------|-----|\n';
 
             spawners.forEach(spawner => {
-                const revenuePerHour = spawner.dropsPerHour * spawner.dropPrice;
-                const hoursToROI = spawner.price / revenuePerHour;
-                markdown += `| ${spawner.name} | ${formatCurrency(spawner.price)} | ${spawner.drop} (${formatCurrency(spawner.dropPrice)}) | ${formatCurrency(revenuePerHour)} | ${formatHours(hoursToROI)} |\n`;
+                const revenue = calculateRevenue(spawner);
+                const roi = calculateROI(spawner);
+                
+                let dropsText = '';
+                if (spawner.drops.length === 0) {
+                    dropsText = 'Sem drops';
+                } else {
+                    dropsText = spawner.drops.map(drop => 
+                        `${drop.item} (${formatCurrency(drop.price)} × ${formatNumber(drop.rate)}/h)`
+                    ).join(', ');
+                }
+
+                markdown += `| ${spawner.name} | ${formatCurrency(spawner.price)} | ${dropsText} | ${formatCurrency(revenue)} | ${formatROI(roi)} |\n`;
             });
 
             const blob = new Blob([markdown], { type: 'text/markdown' });
@@ -335,8 +553,11 @@
             URL.revokeObjectURL(url);
         }
 
-        document.getElementById('hoursInput').addEventListener('input', calculateAndRender);
-        calculateAndRender();
+        // Initialize
+        renderTable();
+
+        // Update on input change
+        document.getElementById('hoursPerDay').addEventListener('input', renderTable);
     </script>
 </body>
 </html>
