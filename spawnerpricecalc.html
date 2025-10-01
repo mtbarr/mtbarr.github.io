@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Spawners - Minecraft</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+
+        .spawner-card {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .spawner-card:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+        .spawner-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .spawner-name {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .spawner-price {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .spawner-price label {
+            font-weight: 600;
+        }
+
+        .spawner-price input {
+            width: 120px;
+            padding: 8px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        .drops-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .drop-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+
+        .drop-item h4 {
+            color: #555;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .input-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-row label {
+            min-width: 80px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .input-row input {
+            flex: 1;
+            padding: 6px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .results {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .result-item {
+            text-align: center;
+        }
+
+        .result-label {
+            font-size: 0.85em;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .result-value {
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+
+        .roi-good {
+            color: #4ade80;
+        }
+
+        .roi-medium {
+            color: #fbbf24;
+        }
+
+        .roi-bad {
+            color: #f87171;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 1.5em;
+            }
+
+            .drops-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Calculadora de Economia - Spawners</h1>
+        <div id="spawners"></div>
+    </div>
+
+    <script>
+        const spawnersData = [
+            {
+                name: 'Vaca',
+                price: 75000,
+                drops: [
+                    { name: 'Couro', price: 4.31, rate: 400 },
+                    { name: 'Carne de Vaca', price: 4.31, rate: 400 }
+                ]
+            },
+            {
+                name: 'Aranha',
+                price: 100000,
+                drops: [
+                    { name: 'Olho de Aranha', price: 8.52, rate: 300 },
+                    { name: 'Linha', price: 8.52, rate: 300 }
+                ]
+            },
+            {
+                name: 'Slime',
+                price: 150000,
+                drops: [
+                    { name: 'Bola de Slime', price: 28.75, rate: 300 }
+                ]
+            },
+            {
+                name: 'Skeleton',
+                price: 200000,
+                drops: [
+                    { name: 'Osso', price: 26.29, rate: 500 }
+                ]
+            },
+            {
+                name: 'Creeper',
+                price: 250000,
+                drops: [
+                    { name: 'Pólvora', price: 47.92, rate: 400 }
+                ]
+            },
+            {
+                name: 'Breeze',
+                price: 350000,
+                drops: [
+                    { name: 'Wind Shard', price: 115.00, rate: 200 }
+                ]
+            },
+            {
+                name: 'Blaze',
+                price: 500000,
+                drops: [
+                    { name: 'Blaze Rod', price: 153.33, rate: 300 }
+                ]
+            },
+            {
+                name: 'Pigman',
+                price: 500000,
+                drops: [
+                    { name: 'Pepita/Gold Nugget', price: 153.33, rate: 300 }
+                ]
+            },
+            {
+                name: 'Enderman',
+                price: 750000,
+                drops: [
+                    { name: 'Ender Pearl', price: 575.00, rate: 150 }
+                ]
+            },
+            {
+                name: 'Golem',
+                price: 2000000,
+                drops: [
+                    { name: 'Barra de Ferro', price: 10.00, rate: 600 }
+                ]
+            }
+        ];
+
+        function formatMoney(value) {
+            return '$' + value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function calculateResults(spawner) {
+            const spawnerPrice = parseFloat(document.getElementById(`spawner-price-${spawner.name}`).value) || 0;
+            let totalRevenue = 0;
+
+            spawner.drops.forEach((drop, index) => {
+                const dropPrice = parseFloat(document.getElementById(`drop-price-${spawner.name}-${index}`).value) || 0;
+                const dropRate = parseFloat(document.getElementById(`drop-rate-${spawner.name}-${index}`).value) || 0;
+                totalRevenue += dropPrice * dropRate;
+            });
+
+            const roi = spawnerPrice > 0 ? spawnerPrice / totalRevenue : 0;
+
+            document.getElementById(`revenue-${spawner.name}`).textContent = formatMoney(totalRevenue);
+            
+            const roiElement = document.getElementById(`roi-${spawner.name}`);
+            roiElement.textContent = roi.toFixed(2) + 'h';
+            
+            roiElement.className = 'result-value';
+            if (roi < 15) {
+                roiElement.classList.add('roi-good');
+            } else if (roi < 50) {
+                roiElement.classList.add('roi-medium');
+            } else {
+                roiElement.classList.add('roi-bad');
+            }
+        }
+
+        function renderSpawners() {
+            const container = document.getElementById('spawners');
+            
+            spawnersData.forEach(spawner => {
+                const card = document.createElement('div');
+                card.className = 'spawner-card';
+                
+                let dropsHTML = '';
+                spawner.drops.forEach((drop, index) => {
+                    dropsHTML += `
+                        <div class="drop-item">
+                            <h4>${drop.name}</h4>
+                            <div class="input-group">
+                                <div class="input-row">
+                                    <label>Preço:</label>
+                                    <input type="number" step="0.01" value="${drop.price}" 
+                                           id="drop-price-${spawner.name}-${index}"
+                                           onchange="calculateResults(spawnersData.find(s => s.name === '${spawner.name}'))">
+                                </div>
+                                <div class="input-row">
+                                    <label>Drops/hora:</label>
+                                    <input type="number" value="${drop.rate}" 
+                                           id="drop-rate-${spawner.name}-${index}"
+                                           onchange="calculateResults(spawnersData.find(s => s.name === '${spawner.name}'))">
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                card.innerHTML = `
+                    <div class="spawner-header">
+                        <div class="spawner-name">${spawner.name}</div>
+                        <div class="spawner-price">
+                            <label>Preço do Spawner:</label>
+                            <input type="number" value="${spawner.price}" 
+                                   id="spawner-price-${spawner.name}"
+                                   onchange="calculateResults(spawnersData.find(s => s.name === '${spawner.name}'))">
+                        </div>
+                    </div>
+                    <div class="drops-container">
+                        ${dropsHTML}
+                    </div>
+                    <div class="results">
+                        <div class="result-item">
+                            <div class="result-label">Receita/Hora</div>
+                            <div class="result-value" id="revenue-${spawner.name}">$0.00</div>
+                        </div>
+                        <div class="result-item">
+                            <div class="result-label">ROI (Horas para Pagar)</div>
+                            <div class="result-value" id="roi-${spawner.name}">0.00h</div>
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(card);
+                calculateResults(spawner);
+            });
+        }
+
+        renderSpawners();
+    </script>
+</body>
+</html>
