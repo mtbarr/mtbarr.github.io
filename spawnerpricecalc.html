@@ -192,66 +192,58 @@
                 name: 'Vaca',
                 price: 75000,
                 drops: [
-                    { name: 'Couro', price: 4.31, rate: 400 },
-                    { name: 'Carne de Vaca', price: 4.31, rate: 400 }
+                    { name: 'Couro', price: 0.35, rate: 400 },
+                    { name: 'Carne', price: 0.35, rate: 400 }
                 ]
             },
             {
                 name: 'Aranha',
                 price: 100000,
                 drops: [
-                    { name: 'Olho de Aranha', price: 8.52, rate: 300 },
-                    { name: 'Linha', price: 8.52, rate: 300 }
+                    { name: 'Olho', price: 1.00, rate: 300 },
+                    { name: 'Linha', price: 1.00, rate: 300 }
                 ]
             },
             {
                 name: 'Slime',
                 price: 150000,
                 drops: [
-                    { name: 'Bola de Slime', price: 28.75, rate: 300 }
+                    { name: 'Bola de Slime', price: 3.00, rate: 300 }
                 ]
             },
             {
                 name: 'Skeleton',
                 price: 200000,
                 drops: [
-                    { name: 'Osso', price: 26.29, rate: 500 }
+                    { name: 'Osso', price: 3.00, rate: 500 }
                 ]
             },
             {
                 name: 'Creeper',
                 price: 250000,
                 drops: [
-                    { name: 'Pólvora', price: 47.92, rate: 400 }
+                    { name: 'Pólvora', price: 3.75, rate: 400 }
                 ]
             },
             {
                 name: 'Breeze',
                 price: 350000,
-                drops: [
-                    { name: 'Wind Shard', price: 115.00, rate: 200 }
-                ]
+                drops: []
             },
             {
                 name: 'Blaze',
                 price: 500000,
-                drops: [
-                    { name: 'Blaze Rod', price: 153.33, rate: 300 }
-                ]
+                drops: []
             },
             {
                 name: 'Pigman',
                 price: 500000,
-                drops: [
-                    { name: 'Pepita/Gold Nugget', price: 153.33, rate: 300 }
-                ]
+                drops: []
             },
             {
                 name: 'Enderman',
                 price: 750000,
-                drops: [
-                    { name: 'Ender Pearl', price: 575.00, rate: 150 }
-                ]
+                drops: []
             },
             {
                 name: 'Golem',
@@ -301,27 +293,36 @@
                 card.className = 'spawner-card';
                 
                 let dropsHTML = '';
-                spawner.drops.forEach((drop, index) => {
-                    dropsHTML += `
-                        <div class="drop-item">
-                            <h4>${drop.name}</h4>
-                            <div class="input-group">
-                                <div class="input-row">
-                                    <label>Preço:</label>
-                                    <input type="number" step="0.01" value="${drop.price}" 
-                                           id="drop-price-${spawner.name}-${index}"
-                                           onchange="calculateResults(spawnersData.find(s => s.name === '${spawner.name}'))">
-                                </div>
-                                <div class="input-row">
-                                    <label>Drops/hora:</label>
-                                    <input type="number" value="${drop.rate}" 
-                                           id="drop-rate-${spawner.name}-${index}"
-                                           onchange="calculateResults(spawnersData.find(s => s.name === '${spawner.name}'))">
-                                </div>
-                            </div>
+                
+                if (spawner.drops.length === 0) {
+                    dropsHTML = `
+                        <div class="drop-item" style="text-align: center; padding: 30px;">
+                            <p style="color: #999; font-style: italic;">Sem drops configurados na loja</p>
                         </div>
                     `;
-                });
+                } else {
+                    spawner.drops.forEach((drop, index) => {
+                        dropsHTML += `
+                            <div class="drop-item">
+                                <h4>${drop.name}</h4>
+                                <div class="input-group">
+                                    <div class="input-row">
+                                        <label>Preço:</label>
+                                        <input type="number" step="0.01" value="${drop.price}" 
+                                               id="drop-price-${spawner.name}-${index}"
+                                               onchange="calculateResults(spawnersData.find(s => s.name === '${spawner.name}'))">
+                                    </div>
+                                    <div class="input-row">
+                                        <label>Drops/hora:</label>
+                                        <input type="number" value="${drop.rate}" 
+                                               id="drop-rate-${spawner.name}-${index}"
+                                               onchange="calculateResults(spawnersData.find(s => s.name === '${spawner.name}'))">
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
 
                 card.innerHTML = `
                     <div class="spawner-header">
