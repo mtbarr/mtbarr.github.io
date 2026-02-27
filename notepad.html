@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NotepadX — Dark Editor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Iosevka:wght@400;500;700&display=swap" rel="stylesheet">
+<!-- CodeMirror -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/dialog/dialog.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/search/search.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/search/searchcursor.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/dialog/dialog.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/comment/comment.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/foldcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/foldgutter.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/brace-fold.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/xml-fold.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/indent-fold.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/selection/active-line.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/display/fullscreen.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/foldgutter.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.css">
+<!-- Modes -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/xml/xml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/css/css.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/clike/clike.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/markdown/markdown.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/sql/sql.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/shell/shell.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/yaml/yaml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/toml/toml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/rust/rust.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/go/go.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/php/php.min.js"></script>
+<style>
+:root {
+  --bg0: #1a1b1e;
+  --bg1: #222327;
+  --bg2: #2a2b2f;
+  --bg3: #313236;
+  --bg4: #3d3e44;
+  --border: #3a3b40;
+  --text: #d4d4d4;
+  --text-dim: #7a7b82;
+  --text-muted: #55565c;
+  --accent: #569cd6;
+  --accent2: #4ec9b0;
+  --accent3: #dcdcaa;
+  --red: #f44747;
+  --green: #6a9955;
+  --orange: #ce9178;
+  --tab-h: 30px;
+  --menu-h: 26px;
+  --tool-h: 32px;
+  --status-h: 22px;
+  --explorer-w: 220px;
+  --font: 'Iosevka', 'Cascadia Code', 'Fira Code', monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; background: var(--bg0); color: var(--text); font-family: var(--font); font-size: 13px; }
+
+/* ── MENU BAR ── */
+#menubar { display: flex; align-items: center; height: var(--menu-h); background: var(--bg1); border-bottom: 1px solid var(--border); padding: 0 4px; user-select: none; flex-shrink: 0; position: relative; z-index: 100; }
+.menu-item { position: relative; }
+.menu-item > span { padding: 2px 8px; cursor: pointer; display: inline-block; border-radius: 3px; }
+.menu-item > span:hover, .menu-item.open > span { background: var(--bg4); }
+.menu-dropdown { display: none; position: absolute; top: 100%; left: 0; background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; min-width: 200px; z-index: 999; box-shadow: 0 8px 24px rgba(0,0,0,.5); }
+.menu-item.open .menu-dropdown { display: block; }
+.menu-dropdown hr { border: none; border-top: 1px solid var(--border); margin: 3px 0; }
+.menu-dropdown li { list-style: none; padding: 5px 16px 5px 24px; cursor: pointer; white-space: nowrap; position: relative; }
+.menu-dropdown li:hover { background: var(--accent); color: #fff; }
+.menu-dropdown li .shortcut { float: right; color: var(--text-dim); font-size: 11px; margin-left: 24px; }
+.menu-dropdown li:hover .shortcut { color: rgba(255,255,255,.7); }
+.menu-dropdown li .check { position: absolute; left: 6px; }
+
+/* ── TOOLBAR ── */
+#toolbar { display: flex; align-items: center; height: var(--tool-h); background: var(--bg1); border-bottom: 1px solid var(--border); padding: 0 6px; gap: 2px; flex-shrink: 0; }
+.tb-btn { display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 4px; cursor: pointer; color: var(--text); background: transparent; border: 1px solid transparent; transition: all .1s; font-size: 14px; }
+.tb-btn:hover { background: var(--bg4); border-color: var(--border); }
+.tb-btn:active { background: var(--bg3); }
+.tb-sep { width: 1px; height: 20px; background: var(--border); margin: 0 3px; }
+
+/* ── LAYOUT ── */
+#app { display: flex; flex-direction: column; height: 100%; }
+#main { display: flex; flex: 1; overflow: hidden; }
+
+/* ── EXPLORER ── */
+#explorer { width: var(--explorer-w); background: var(--bg1); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden; transition: width .15s; }
+#explorer.collapsed { width: 0; }
+#explorer-header { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--text-dim); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+#explorer-header span { color: var(--text); font-weight: 600; }
+#explorer-actions { display: flex; gap: 4px; }
+.exp-btn { background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 2px 4px; border-radius: 3px; font-size: 13px; }
+.exp-btn:hover { background: var(--bg4); color: var(--text); }
+#file-tree { flex: 1; overflow-y: auto; padding: 4px 0; }
+.tree-item { display: flex; align-items: center; gap: 5px; padding: 3px 8px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-radius: 3px; margin: 1px 4px; }
+.tree-item:hover { background: var(--bg3); }
+.tree-item.active { background: var(--accent); color: #fff; }
+.tree-item .icon { font-size: 13px; flex-shrink: 0; }
+.tree-item .name { overflow: hidden; text-overflow: ellipsis; font-size: 12.5px; }
+.tree-item .ext-badge { margin-left: auto; font-size: 10px; color: var(--text-muted); flex-shrink: 0; }
+.tree-item.active .ext-badge { color: rgba(255,255,255,.5); }
+.ctx-menu { position: fixed; background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; z-index: 9999; box-shadow: 0 8px 24px rgba(0,0,0,.5); min-width: 160px; }
+.ctx-menu li { list-style: none; padding: 6px 14px; cursor: pointer; font-size: 12.5px; }
+.ctx-menu li:hover { background: var(--accent); color: #fff; }
+.ctx-menu hr { border: none; border-top: 1px solid var(--border); margin: 3px 0; }
+
+/* ── EDITOR AREA ── */
+#editor-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+#tabs { display: flex; align-items: flex-end; background: var(--bg0); border-bottom: 1px solid var(--border); overflow-x: auto; flex-shrink: 0; }
+#tabs::-webkit-scrollbar { height: 3px; }
+#tabs::-webkit-scrollbar-thumb { background: var(--border); }
+.tab { display: flex; align-items: center; gap: 6px; padding: 6px 12px 5px; background: var(--bg2); border: 1px solid var(--border); border-bottom: none; margin-right: 2px; cursor: pointer; white-space: nowrap; max-width: 180px; font-size: 12.5px; border-radius: 4px 4px 0 0; color: var(--text-dim); position: relative; transition: background .1s; flex-shrink: 0; }
+.tab:hover { background: var(--bg3); color: var(--text); }
+.tab.active { background: var(--bg1); color: var(--text); border-bottom-color: var(--bg1); }
+.tab .tab-name { overflow: hidden; text-overflow: ellipsis; }
+.tab .tab-close { font-size: 11px; color: var(--text-muted); padding: 1px 3px; border-radius: 3px; line-height: 1; }
+.tab .tab-close:hover { background: var(--red); color: #fff; }
+.tab .dirty { color: var(--orange); font-size: 10px; }
+#editor-wrap { flex: 1; overflow: hidden; position: relative; }
+#no-file { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-muted); gap: 12px; }
+#no-file .nf-logo { font-size: 48px; }
+#no-file p { font-size: 13px; }
+
+/* CodeMirror theme */
+.CodeMirror { height: 100% !important; background: var(--bg1) !important; color: var(--text) !important; font-family: var(--font) !important; font-size: 14px; line-height: 1.6 !important; }
+.CodeMirror-scroll { height: 100%; }
+.CodeMirror-gutters { background: var(--bg0) !important; border-right: 1px solid var(--border) !important; }
+.CodeMirror-linenumber { color: var(--text-muted) !important; padding: 0 6px; }
+.CodeMirror-cursor { border-left: 2px solid var(--accent) !important; }
+.CodeMirror-selected { background: rgba(86,156,214,.25) !important; }
+.CodeMirror-activeline-background { background: rgba(255,255,255,.04) !important; }
+.CodeMirror-matchingbracket { color: var(--accent2) !important; font-weight: bold; text-decoration: underline; }
+.CodeMirror-foldgutter-open, .CodeMirror-foldgutter-folded { color: var(--text-dim); cursor: pointer; }
+.CodeMirror-foldmarker { color: var(--accent); background: var(--bg3); border: 1px solid var(--border); border-radius: 3px; padding: 0 4px; font-size: 11px; }
+/* CM tokens — VSCode-like */
+.cm-keyword { color: #569cd6 !important; }
+.cm-atom { color: #569cd6 !important; }
+.cm-number { color: #b5cea8 !important; }
+.cm-def { color: #dcdcaa !important; }
+.cm-variable { color: #9cdcfe !important; }
+.cm-variable-2 { color: #9cdcfe !important; }
+.cm-variable-3, .cm-type { color: #4ec9b0 !important; }
+.cm-property { color: #9cdcfe !important; }
+.cm-operator { color: #d4d4d4 !important; }
+.cm-comment { color: #6a9955 !important; font-style: italic; }
+.cm-string { color: #ce9178 !important; }
+.cm-string-2 { color: #ce9178 !important; }
+.cm-meta { color: #9b9b9b !important; }
+.cm-qualifier { color: #4ec9b0 !important; }
+.cm-builtin { color: #dcdcaa !important; }
+.cm-bracket { color: #d4d4d4 !important; }
+.cm-tag { color: #569cd6 !important; }
+.cm-attribute { color: #9cdcfe !important; }
+.cm-hr { color: #6a9955 !important; }
+.cm-link { color: #ce9178 !important; text-decoration: underline; }
+.cm-error { color: #f44747 !important; }
+
+/* ── STATUS BAR ── */
+#statusbar { display: flex; align-items: center; justify-content: space-between; height: var(--status-h); background: var(--bg0); border-top: 1px solid var(--border); padding: 0 10px; font-size: 11.5px; color: var(--text-dim); flex-shrink: 0; }
+#statusbar .sb-left, #statusbar .sb-right { display: flex; align-items: center; gap: 14px; }
+#statusbar .sb-item { cursor: default; }
+#statusbar .sb-item.clickable { cursor: pointer; }
+#statusbar .sb-item.clickable:hover { color: var(--text); }
+#statusbar #lang-selector { cursor: pointer; }
+#statusbar #lang-selector:hover { color: var(--accent); }
+
+/* ── MODALS ── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 10000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
+.modal { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 20px; min-width: 320px; max-width: 520px; box-shadow: 0 20px 60px rgba(0,0,0,.6); }
+.modal h3 { font-size: 14px; margin-bottom: 14px; color: var(--text); }
+.modal label { display: block; font-size: 12px; color: var(--text-dim); margin-bottom: 4px; margin-top: 10px; }
+.modal input, .modal select { width: 100%; background: var(--bg0); border: 1px solid var(--border); color: var(--text); padding: 6px 10px; border-radius: 4px; font-family: var(--font); font-size: 13px; outline: none; }
+.modal input:focus, .modal select:focus { border-color: var(--accent); }
+.modal .modal-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+.btn { padding: 6px 14px; border-radius: 4px; border: 1px solid var(--border); background: var(--bg3); color: var(--text); cursor: pointer; font-family: var(--font); font-size: 12.5px; transition: all .1s; }
+.btn:hover { background: var(--bg4); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.primary:hover { filter: brightness(1.1); }
+.btn.danger { background: var(--red); border-color: var(--red); color: #fff; }
+
+/* ── SETTINGS ── */
+#settings-modal .setting-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); }
+#settings-modal .setting-row:last-child { border-bottom: none; }
+#settings-modal .setting-row label { color: var(--text); font-size: 12.5px; margin: 0; }
+#settings-modal input[type=number] { width: 70px; }
+#settings-modal select { width: 180px; }
+.toggle { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-slider { position: absolute; inset: 0; background: var(--bg4); border-radius: 20px; transition: .2s; cursor: pointer; }
+.toggle-slider:before { content: ''; position: absolute; width: 14px; height: 14px; background: var(--text-dim); border-radius: 50%; left: 3px; top: 3px; transition: .2s; }
+.toggle input:checked + .toggle-slider { background: var(--accent); }
+.toggle input:checked + .toggle-slider:before { transform: translateX(16px); background: #fff; }
+
+/* ── SEARCH/REPLACE BAR ── */
+#find-bar { display: none; padding: 6px 10px; background: var(--bg2); border-bottom: 1px solid var(--border); gap: 6px; align-items: center; flex-wrap: wrap; }
+#find-bar.open { display: flex; }
+#find-bar input { background: var(--bg0); border: 1px solid var(--border); color: var(--text); padding: 4px 8px; border-radius: 4px; font-family: var(--font); font-size: 12.5px; outline: none; width: 200px; }
+#find-bar input:focus { border-color: var(--accent); }
+#find-bar .fb-btn { padding: 4px 10px; font-size: 12px; }
+#find-bar label { font-size: 12px; color: var(--text-dim); display: flex; align-items: center; gap: 4px; cursor: pointer; }
+#find-bar .close-find { margin-left: auto; background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 16px; line-height: 1; }
+#find-bar .close-find:hover { color: var(--text); }
+#find-count { font-size: 11.5px; color: var(--text-dim); }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg0); }
+::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border); }
+
+/* welcome tab colors */
+#welcome-content { padding: 30px; color: var(--text-dim); }
+#welcome-content h2 { color: var(--text); margin-bottom: 10px; }
+#welcome-content kbd { background: var(--bg3); border: 1px solid var(--border); padding: 2px 6px; border-radius: 3px; font-size: 11px; }
+
+/* drag resizer */
+#resizer { width: 4px; background: transparent; cursor: col-resize; flex-shrink: 0; transition: background .15s; }
+#resizer:hover, #resizer.dragging { background: var(--accent); }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- MENU -->
+  <div id="menubar">
+    <div class="menu-item" id="m-file">
+      <span>File</span>
+      <ul class="menu-dropdown">
+        <li data-action="new"><span class="check"></span>New <span class="shortcut">Ctrl+N</span></li>
+        <li data-action="open-file"><span class="check"></span>Open File… <span class="shortcut">Ctrl+O</span></li>
+        <hr>
+        <li data-action="save"><span class="check"></span>Save <span class="shortcut">Ctrl+S</span></li>
+        <li data-action="save-as"><span class="check"></span>Save As… <span class="shortcut">Ctrl+Shift+S</span></li>
+        <li data-action="download"><span class="check"></span>Download File <span class="shortcut">Ctrl+D</span></li>
+        <hr>
+        <li data-action="close-tab"><span class="check"></span>Close Tab <span class="shortcut">Ctrl+W</span></li>
+        <li data-action="close-all"><span class="check"></span>Close All Tabs</li>
+      </ul>
+    </div>
+    <div class="menu-item" id="m-edit">
+      <span>Edit</span>
+      <ul class="menu-dropdown">
+        <li data-action="undo"><span class="check"></span>Undo <span class="shortcut">Ctrl+Z</span></li>
+        <li data-action="redo"><span class="check"></span>Redo <span class="shortcut">Ctrl+Y</span></li>
+        <hr>
+        <li data-action="cut"><span class="check"></span>Cut <span class="shortcut">Ctrl+X</span></li>
+        <li data-action="copy"><span class="check"></span>Copy <span class="shortcut">Ctrl+C</span></li>
+        <li data-action="paste"><span class="check"></span>Paste <span class="shortcut">Ctrl+V</span></li>
+        <li data-action="select-all"><span class="check"></span>Select All <span class="shortcut">Ctrl+A</span></li>
+        <hr>
+        <li data-action="toggle-comment"><span class="check"></span>Toggle Comment <span class="shortcut">Ctrl+/</span></li>
+        <li data-action="indent"><span class="check"></span>Indent <span class="shortcut">Tab</span></li>
+        <li data-action="dedent"><span class="check"></span>Dedent <span class="shortcut">Shift+Tab</span></li>
+      </ul>
+    </div>
+    <div class="menu-item" id="m-search">
+      <span>Search</span>
+      <ul class="menu-dropdown">
+        <li data-action="find"><span class="check"></span>Find <span class="shortcut">Ctrl+F</span></li>
+        <li data-action="find-replace"><span class="check"></span>Replace <span class="shortcut">Ctrl+H</span></li>
+        <li data-action="goto-line"><span class="check"></span>Go to Line… <span class="shortcut">Ctrl+G</span></li>
+      </ul>
+    </div>
+    <div class="menu-item" id="m-view">
+      <span>View</span>
+      <ul class="menu-dropdown">
+        <li data-action="toggle-explorer"><span class="check" id="chk-explorer">✓</span>Project Explorer</li>
+        <li data-action="toggle-toolbar"><span class="check" id="chk-toolbar">✓</span>Toolbar</li>
+        <li data-action="toggle-statusbar"><span class="check" id="chk-statusbar">✓</span>Status Bar</li>
+        <hr>
+        <li data-action="toggle-wordwrap"><span class="check" id="chk-wordwrap"> </span>Word Wrap <span class="shortcut">Alt+Z</span></li>
+        <li data-action="toggle-linenumbers"><span class="check" id="chk-linenums">✓</span>Line Numbers</li>
+        <li data-action="toggle-fold"><span class="check" id="chk-fold">✓</span>Code Folding</li>
+        <hr>
+        <li data-action="zoom-in">Zoom In <span class="shortcut">Ctrl++</span></li>
+        <li data-action="zoom-out">Zoom Out <span class="shortcut">Ctrl+-</span></li>
+        <li data-action="zoom-reset">Reset Zoom <span class="shortcut">Ctrl+0</span></li>
+      </ul>
+    </div>
+    <div class="menu-item" id="m-settings">
+      <span>Settings</span>
+      <ul class="menu-dropdown">
+        <li data-action="open-settings"><span class="check"></span>Preferences…</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div id="toolbar">
+    <div class="tb-btn" title="New (Ctrl+N)" data-action="new">📄</div>
+    <div class="tb-btn" title="Open (Ctrl+O)" data-action="open-file">📂</div>
+    <div class="tb-btn" title="Save (Ctrl+S)" data-action="save">💾</div>
+    <div class="tb-btn" title="Download" data-action="download">⬇️</div>
+    <div class="tb-sep"></div>
+    <div class="tb-btn" title="Undo" data-action="undo">↩️</div>
+    <div class="tb-btn" title="Redo" data-action="redo">↪️</div>
+    <div class="tb-sep"></div>
+    <div class="tb-btn" title="Find (Ctrl+F)" data-action="find">🔍</div>
+    <div class="tb-btn" title="Replace (Ctrl+H)" data-action="find-replace">🔄</div>
+    <div class="tb-sep"></div>
+    <div class="tb-btn" title="Toggle Explorer" data-action="toggle-explorer">📁</div>
+    <div class="tb-btn" title="Preferences" data-action="open-settings">⚙️</div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="main">
+    <!-- EXPLORER -->
+    <div id="explorer">
+      <div id="explorer-header">
+        <span>Explorer</span>
+        <div id="explorer-actions">
+          <button class="exp-btn" title="New File" id="btn-new-file">+</button>
+          <button class="exp-btn" title="Refresh">↻</button>
+        </div>
+      </div>
+      <div id="file-tree"></div>
+    </div>
+    <div id="resizer"></div>
+
+    <!-- EDITOR -->
+    <div id="editor-area">
+      <div id="find-bar">
+        <input id="find-input" placeholder="Find…" autocomplete="off" spellcheck="false">
+        <input id="replace-input" placeholder="Replace…" autocomplete="off" spellcheck="false" style="display:none">
+        <label><input type="checkbox" id="find-regex"> Regex</label>
+        <label><input type="checkbox" id="find-case"> Case</label>
+        <label><input type="checkbox" id="find-whole"> Word</label>
+        <span id="find-count"></span>
+        <button class="btn fb-btn" id="btn-find-prev">▲</button>
+        <button class="btn fb-btn" id="btn-find-next">▼</button>
+        <button class="btn fb-btn" id="btn-replace" style="display:none">Replace</button>
+        <button class="btn fb-btn" id="btn-replace-all" style="display:none">All</button>
+        <button class="close-find" id="btn-close-find">×</button>
+      </div>
+      <div id="tabs"></div>
+      <div id="editor-wrap">
+        <div id="no-file">
+          <div class="nf-logo">⌨️</div>
+          <p>Create or open a file to start editing</p>
+          <button class="btn primary" data-action="new">New File</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATUS -->
+  <div id="statusbar">
+    <div class="sb-left">
+      <span class="sb-item" id="sb-file">No file</span>
+      <span class="sb-item" id="sb-dirty"></span>
+    </div>
+    <div class="sb-right">
+      <span class="sb-item" id="sb-pos">Ln 1, Col 1</span>
+      <span class="sb-item" id="sb-sel"></span>
+      <span class="sb-item" id="sb-encoding">UTF-8</span>
+      <span class="sb-item" id="sb-eol">LF</span>
+      <span class="sb-item clickable" id="lang-selector" title="Change language">Plain Text</span>
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div id="new-file-modal" class="modal-overlay" style="display:none">
+  <div class="modal">
+    <h3>New File</h3>
+    <label>File Name</label>
+    <input id="new-file-name" type="text" value="untitled.txt" placeholder="filename.ext">
+    <div class="modal-btns">
+      <button class="btn" id="cancel-new-file">Cancel</button>
+      <button class="btn primary" id="confirm-new-file">Create</button>
+    </div>
+  </div>
+</div>
+
+<div id="rename-modal" class="modal-overlay" style="display:none">
+  <div class="modal">
+    <h3>Rename File</h3>
+    <label>New Name</label>
+    <input id="rename-input" type="text">
+    <div class="modal-btns">
+      <button class="btn" id="cancel-rename">Cancel</button>
+      <button class="btn primary" id="confirm-rename">Rename</button>
+    </div>
+  </div>
+</div>
+
+<div id="goto-modal" class="modal-overlay" style="display:none">
+  <div class="modal">
+    <h3>Go to Line</h3>
+    <label>Line Number</label>
+    <input id="goto-line-input" type="number" min="1" placeholder="1">
+    <div class="modal-btns">
+      <button class="btn" id="cancel-goto">Cancel</button>
+      <button class="btn primary" id="confirm-goto">Go</button>
+    </div>
+  </div>
+</div>
+
+<div id="settings-modal" class="modal-overlay" style="display:none">
+  <div class="modal" id="settings-modal-inner" style="min-width:420px">
+    <h3>⚙️ Preferences</h3>
+    <div class="setting-row">
+      <label>Font Family</label>
+      <select id="pref-font">
+        <option value="'Iosevka', monospace">Iosevka</option>
+        <option value="'Fira Code', monospace">Fira Code</option>
+        <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
+        <option value="'Cascadia Code', monospace">Cascadia Code</option>
+        <option value="'Source Code Pro', monospace">Source Code Pro</option>
+        <option value="'Courier New', monospace">Courier New</option>
+        <option value="monospace">System Mono</option>
+      </select>
+    </div>
+    <div class="setting-row">
+      <label>Font Size (px)</label>
+      <input id="pref-font-size" type="number" min="8" max="32" value="14" style="width:80px">
+    </div>
+    <div class="setting-row">
+      <label>Tab Size</label>
+      <input id="pref-tab-size" type="number" min="1" max="8" value="2" style="width:80px">
+    </div>
+    <div class="setting-row">
+      <label>Indent with Spaces</label>
+      <label class="toggle"><input type="checkbox" id="pref-spaces" checked><span class="toggle-slider"></span></label>
+    </div>
+    <div class="setting-row">
+      <label>Word Wrap</label>
+      <label class="toggle"><input type="checkbox" id="pref-wordwrap"><span class="toggle-slider"></span></label>
+    </div>
+    <div class="setting-row">
+      <label>Line Numbers</label>
+      <label class="toggle"><input type="checkbox" id="pref-linenums" checked><span class="toggle-slider"></span></label>
+    </div>
+    <div class="setting-row">
+      <label>Auto Close Brackets</label>
+      <label class="toggle"><input type="checkbox" id="pref-closebrackets" checked><span class="toggle-slider"></span></label>
+    </div>
+    <div class="setting-row">
+      <label>Highlight Active Line</label>
+      <label class="toggle"><input type="checkbox" id="pref-activeline" checked><span class="toggle-slider"></span></label>
+    </div>
+    <div class="setting-row">
+      <label>Code Folding</label>
+      <label class="toggle"><input type="checkbox" id="pref-folding" checked><span class="toggle-slider"></span></label>
+    </div>
+    <div class="setting-row">
+      <label>Match Brackets</label>
+      <label class="toggle"><input type="checkbox" id="pref-matchbrackets" checked><span class="toggle-slider"></span></label>
+    </div>
+    <div class="modal-btns">
+      <button class="btn" id="cancel-settings">Cancel</button>
+      <button class="btn primary" id="save-settings">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="lang-modal" class="modal-overlay" style="display:none">
+  <div class="modal" style="min-width:320px;max-height:80vh;overflow-y:auto">
+    <h3>Select Language</h3>
+    <div id="lang-list" style="display:flex;flex-direction:column;gap:3px;margin-top:8px"></div>
+  </div>
+</div>
+
+<!-- HIDDEN FILE INPUT -->
+<input type="file" id="file-input" style="display:none" multiple>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  NotepadX — Main Application
+// ═══════════════════════════════════════════════════════
+
+const LS_FILES   = 'npx:files';
+const LS_TABS    = 'npx:tabs';
+const LS_PREFS   = 'npx:prefs';
+const LS_ACTIVE  = 'npx:active';
+
+// ── Language Map ──
+const LANGS = [
+  { name: 'Plain Text',   mode: null,                   exts: ['txt','log','text'] },
+  { name: 'JavaScript',   mode: 'javascript',           exts: ['js','mjs','cjs'] },
+  { name: 'TypeScript',   mode: {name:'javascript', typescript:true}, exts: ['ts','tsx'] },
+  { name: 'JSX',          mode: {name:'javascript', jsx:true},        exts: ['jsx'] },
+  { name: 'JSON',         mode: {name:'javascript', json:true},       exts: ['json'] },
+  { name: 'HTML',         mode: 'htmlmixed',            exts: ['html','htm'] },
+  { name: 'XML',          mode: 'xml',                  exts: ['xml','svg','xsl'] },
+  { name: 'CSS',          mode: 'css',                  exts: ['css'] },
+  { name: 'SCSS',         mode: 'css',                  exts: ['scss','sass'] },
+  { name: 'Java',         mode: 'text/x-java',          exts: ['java'] },
+  { name: 'C',            mode: 'text/x-csrc',          exts: ['c','h'] },
+  { name: 'C++',          mode: 'text/x-c++src',        exts: ['cpp','cc','cxx','hpp'] },
+  { name: 'C#',           mode: 'text/x-csharp',        exts: ['cs'] },
+  { name: 'Kotlin',       mode: 'text/x-kotlin',        exts: ['kt','kts'] },
+  { name: 'Python',       mode: 'python',               exts: ['py','pyw'] },
+  { name: 'Markdown',     mode: 'markdown',             exts: ['md','markdown'] },
+  { name: 'SQL',          mode: 'sql',                  exts: ['sql'] },
+  { name: 'Shell',        mode: 'shell',                exts: ['sh','bash','zsh'] },
+  { name: 'YAML',         mode: 'yaml',                 exts: ['yml','yaml'] },
+  { name: 'TOML',         mode: 'toml',                 exts: ['toml'] },
+  { name: 'Rust',         mode: 'rust',                 exts: ['rs'] },
+  { name: 'Go',           mode: 'go',                   exts: ['go'] },
+  { name: 'PHP',          mode: 'php',                  exts: ['php'] },
+  { name: 'Dockerfile',   mode: 'shell',                exts: ['dockerfile'] },
+];
+
+const EXT_MAP = {};
+LANGS.forEach(l => l.exts.forEach(e => EXT_MAP[e] = l));
+
+function getLangByExt(name) {
+  const ext = (name||'').split('.').pop().toLowerCase();
+  return EXT_MAP[ext] || LANGS[0];
+}
+
+// ── State ──
+let tabs = [];          // [{id, name, content, lang, dirty}]
+let activeId = null;
+let cm = null;          // CodeMirror instance
+let files = {};         // {id: {name, content}}
+let prefs = {};
+
+let _ignoreChange = false;
+let _findMode = 'find'; // 'find' | 'replace'
+
+// ── Prefs ──
+const DEFAULT_PREFS = {
+  font: "'Iosevka', monospace",
+  fontSize: 14,
+  tabSize: 2,
+  spaces: true,
+  wordwrap: false,
+  linenums: true,
+  closebrackets: true,
+  activeline: true,
+  folding: true,
+  matchbrackets: true,
+  explorerVisible: true,
+  toolbarVisible: true,
+  statusbarVisible: true,
+};
+
+function loadPrefs() {
+  try { prefs = { ...DEFAULT_PREFS, ...JSON.parse(localStorage.getItem(LS_PREFS) || '{}') }; }
+  catch { prefs = { ...DEFAULT_PREFS }; }
+}
+function savePrefs() {
+  localStorage.setItem(LS_PREFS, JSON.stringify(prefs));
+}
+
+// ── Files Persistence ──
+function loadFiles() {
+  try { files = JSON.parse(localStorage.getItem(LS_FILES) || '{}'); } catch { files = {}; }
+  try { tabs = JSON.parse(localStorage.getItem(LS_TABS) || '[]'); } catch { tabs = []; }
+  activeId = localStorage.getItem(LS_ACTIVE);
+}
+function saveFiles() {
+  // sync open tab contents into files
+  tabs.forEach(t => { files[t.id] = { name: t.name, content: t.content }; });
+  localStorage.setItem(LS_FILES, JSON.stringify(files));
+  localStorage.setItem(LS_TABS, JSON.stringify(tabs.map(t => ({ id: t.id, name: t.name, lang: t.lang }))));
+  if (activeId) localStorage.setItem(LS_ACTIVE, activeId);
+}
+
+// ── CodeMirror Init ──
+function initCM() {
+  const ta = document.createElement('textarea');
+  document.getElementById('editor-wrap').appendChild(ta);
+  cm = CodeMirror.fromTextArea(ta, {
+    lineNumbers: true,
+    matchBrackets: true,
+    autoCloseBrackets: true,
+    styleActiveLine: true,
+    extraKeys: {
+      'Ctrl-/': () => cm.execCommand('toggleComment'),
+      'Alt-Z': () => actions['toggle-wordwrap'](),
+      'Ctrl-G': () => actions['goto-line'](),
+      'Ctrl-D': () => actions['download'](),
+      'Ctrl-F': () => actions['find'](),
+      'Ctrl-H': () => actions['find-replace'](),
+    },
+    foldGutter: true,
+    gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
+  });
+  cm.on('change', () => {
+    if (_ignoreChange) return;
+    const tab = getActiveTab();
+    if (!tab) return;
+    tab.content = cm.getValue();
+    tab.dirty = true;
+    renderTabs();
+    updateStatus();
+    debounceSave();
+  });
+  cm.on('cursorActivity', updateStatus);
+  applyPrefs();
+}
+
+let _saveTimer;
+function debounceSave() {
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(saveFiles, 800);
+}
+
+// ── Apply Prefs ──
+function applyPrefs() {
+  if (!cm) return;
+  document.documentElement.style.setProperty('--font', prefs.font);
+  cm.setOption('lineWrapping', prefs.wordwrap);
+  cm.setOption('lineNumbers', prefs.linenums);
+  cm.setOption('autoCloseBrackets', prefs.closebrackets);
+  cm.setOption('styleActiveLine', prefs.activeline);
+  cm.setOption('matchBrackets', prefs.matchbrackets);
+  cm.setOption('tabSize', prefs.tabSize);
+  cm.setOption('indentWithTabs', !prefs.spaces);
+  cm.setOption('indentUnit', prefs.tabSize);
+  // folding
+  if (prefs.folding) {
+    cm.setOption('foldGutter', true);
+    cm.setOption('gutters', ['CodeMirror-linenumbers', 'CodeMirror-foldgutter']);
+  } else {
+    cm.setOption('foldGutter', false);
+    cm.setOption('gutters', ['CodeMirror-linenumbers']);
+  }
+  // font size
+  cm.getWrapperElement().style.fontSize = prefs.fontSize + 'px';
+  // explorer
+  document.getElementById('explorer').classList.toggle('collapsed', !prefs.explorerVisible);
+  document.getElementById('toolbar').style.display = prefs.toolbarVisible ? '' : 'none';
+  document.getElementById('statusbar').style.display = prefs.statusbarVisible ? '' : 'none';
+  // checkmarks in menu
+  document.getElementById('chk-explorer').textContent = prefs.explorerVisible ? '✓' : ' ';
+  document.getElementById('chk-toolbar').textContent  = prefs.toolbarVisible  ? '✓' : ' ';
+  document.getElementById('chk-statusbar').textContent= prefs.statusbarVisible? '✓' : ' ';
+  document.getElementById('chk-wordwrap').textContent = prefs.wordwrap  ? '✓' : ' ';
+  document.getElementById('chk-linenums').textContent = prefs.linenums  ? '✓' : ' ';
+  document.getElementById('chk-fold').textContent     = prefs.folding   ? '✓' : ' ';
+  cm.refresh();
+}
+
+// ── Tabs ──
+function genId() { return 't' + Date.now() + Math.random().toString(36).slice(2,6); }
+
+function getActiveTab() { return tabs.find(t => t.id === activeId); }
+
+function createTab(name, content='', lang=null) {
+  const id = genId();
+  if (!lang) lang = getLangByExt(name).name;
+  const tab = { id, name, content, lang, dirty: false };
+  tabs.push(tab);
+  files[id] = { name, content };
+  openTab(id);
+  return tab;
+}
+
+function openTab(id) {
+  activeId = id;
+  const tab = getActiveTab();
+  if (!tab) return;
+  _ignoreChange = true;
+  const langObj = LANGS.find(l => l.name === tab.lang) || LANGS[0];
+  cm.setOption('mode', langObj.mode);
+  cm.setValue(tab.content || '');
+  cm.clearHistory();
+  _ignoreChange = false;
+  renderTabs();
+  renderExplorer();
+  updateStatus();
+  cm.focus();
+  localStorage.setItem(LS_ACTIVE, id);
+  document.getElementById('no-file').style.display = 'none';
+  cm.getWrapperElement().style.display = '';
+  cm.refresh();
+}
+
+function closeTab(id) {
+  const idx = tabs.findIndex(t => t.id === id);
+  if (idx < 0) return;
+  tabs.splice(idx, 1);
+  delete files[id];
+  if (activeId === id) {
+    activeId = tabs[Math.min(idx, tabs.length-1)]?.id || null;
+  }
+  saveFiles();
+  if (activeId) openTab(activeId);
+  else {
+    renderTabs();
+    renderExplorer();
+    document.getElementById('no-file').style.display = '';
+    cm.getWrapperElement().style.display = 'none';
+    document.getElementById('sb-file').textContent = 'No file';
+    document.getElementById('lang-selector').textContent = 'Plain Text';
+  }
+}
+
+function renderTabs() {
+  const el = document.getElementById('tabs');
+  el.innerHTML = '';
+  tabs.forEach(t => {
+    const div = document.createElement('div');
+    div.className = 'tab' + (t.id === activeId ? ' active' : '');
+    div.dataset.id = t.id;
+    div.innerHTML = `<span class="tab-name">${escHtml(t.name)}</span>${t.dirty ? '<span class="dirty">●</span>' : ''}<span class="tab-close" data-close="${t.id}">×</span>`;
+    div.addEventListener('click', e => {
+      if (e.target.dataset.close) { closeTab(e.target.dataset.close); return; }
+      openTab(t.id);
+    });
+    div.addEventListener('contextmenu', e => { e.preventDefault(); showTabCtx(e, t.id); });
+    el.appendChild(div);
+  });
+}
+
+function showTabCtx(e, id) {
+  removeCtx();
+  const tab = tabs.find(t => t.id === id);
+  if (!tab) return;
+  const m = document.createElement('ul');
+  m.className = 'ctx-menu';
+  m.style.left = e.clientX+'px'; m.style.top = e.clientY+'px';
+  [['Save', () => saveTab(id)], ['Download', () => downloadTab(id)], ['Rename', () => renameTab(id)], ['-'], ['Close', () => closeTab(id)], ['Close Others', () => closeOthers(id)], ['Close All', () => actions['close-all']()]].forEach(([label, fn]) => {
+    if (label === '-') { m.innerHTML += '<hr>'; return; }
+    const li = document.createElement('li');
+    li.textContent = label;
+    li.onclick = () => { fn(); removeCtx(); };
+    m.appendChild(li);
+  });
+  document.body.appendChild(m);
+  setTimeout(() => document.addEventListener('click', removeCtx, {once:true}), 10);
+}
+function closeOthers(id) { [...tabs].filter(t => t.id !== id).forEach(t => closeTab(t.id)); }
+
+// ── Explorer ──
+function renderExplorer() {
+  const tree = document.getElementById('file-tree');
+  tree.innerHTML = '';
+  if (Object.keys(files).length === 0) {
+    tree.innerHTML = '<div style="padding:12px;color:var(--text-muted);font-size:12px;text-align:center">No open files</div>';
+    return;
+  }
+  Object.entries(files).forEach(([id, f]) => {
+    const ext = f.name.split('.').pop().toLowerCase();
+    const icon = getFileIcon(ext);
+    const div = document.createElement('div');
+    div.className = 'tree-item' + (id === activeId ? ' active' : '');
+    div.dataset.id = id;
+    div.innerHTML = `<span class="icon">${icon}</span><span class="name" title="${escHtml(f.name)}">${escHtml(f.name)}</span><span class="ext-badge">.${ext}</span>`;
+    div.addEventListener('click', () => {
+      const tab = tabs.find(t => t.id === id);
+      if (tab) openTab(id);
+      else { tabs.push({id, name: f.name, content: f.content||'', lang: getLangByExt(f.name).name, dirty: false}); openTab(id); }
+    });
+    div.addEventListener('contextmenu', e => { e.preventDefault(); showExplorerCtx(e, id); });
+    tree.appendChild(div);
+  });
+}
+
+function getFileIcon(ext) {
+  const m = { js:'🟨', ts:'🔷', jsx:'⚛️', tsx:'⚛️', html:'🌐', css:'🎨', scss:'🎨', json:'{}', java:'☕', py:'🐍', md:'📝', sql:'🗃️', sh:'💲', yml:'⚙️', yaml:'⚙️', xml:'📋', svg:'🖼️', go:'🐹', rs:'🦀', kt:'🟣', php:'🐘', c:'🔵', cpp:'🔵', cs:'🟢' };
+  return m[ext] || '📄';
+}
+
+function showExplorerCtx(e, id) {
+  removeCtx();
+  const f = files[id];
+  const m = document.createElement('ul');
+  m.className = 'ctx-menu';
+  m.style.left = e.clientX+'px'; m.style.top = e.clientY+'px';
+  [['Open', () => { const t = tabs.find(t=>t.id===id); if(t) openTab(id); else {tabs.push({id,name:f.name,content:f.content||'',lang:getLangByExt(f.name).name,dirty:false}); openTab(id);} }],
+   ['Download', () => downloadFile(f.name, f.content||'')],
+   ['Rename', () => renameTab(id)],
+   ['-'],
+   ['Delete', () => { if(confirm('Delete '+f.name+'?')) { delete files[id]; closeTab(id); saveFiles(); renderExplorer(); } }]
+  ].forEach(([label, fn]) => {
+    if (label==='-') { m.innerHTML += '<hr>'; return; }
+    const li = document.createElement('li'); li.textContent=label; li.onclick=()=>{fn();removeCtx();}; m.appendChild(li);
+  });
+  document.body.appendChild(m);
+  setTimeout(() => document.addEventListener('click', removeCtx, {once:true}), 10);
+}
+
+function removeCtx() { document.querySelectorAll('.ctx-menu').forEach(el=>el.remove()); }
+
+// ── Save / Download ──
+function saveTab(id) {
+  const tab = tabs.find(t=>t.id===id);
+  if (!tab) return;
+  tab.dirty = false;
+  files[id] = { name: tab.name, content: tab.content };
+  saveFiles();
+  renderTabs();
+}
+
+function downloadTab(id) {
+  const tab = tabs.find(t=>t.id===id);
+  if (!tab) return;
+  downloadFile(tab.name, tab.content);
+}
+
+function downloadFile(name, content) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], {type:'text/plain'}));
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+function renameTab(id) {
+  const f = files[id] || tabs.find(t=>t.id===id);
+  if (!f) return;
+  document.getElementById('rename-input').value = f.name || '';
+  document.getElementById('rename-modal').style.display = 'flex';
+  document.getElementById('rename-input').focus();
+  document.getElementById('rename-input').select();
+  document.getElementById('confirm-rename').onclick = () => {
+    const newName = document.getElementById('rename-input').value.trim();
+    if (!newName) return;
+    if (files[id]) files[id].name = newName;
+    const tab = tabs.find(t=>t.id===id);
+    if (tab) { tab.name = newName; tab.lang = getLangByExt(newName).name; }
+    saveFiles(); renderTabs(); renderExplorer(); updateStatus();
+    document.getElementById('rename-modal').style.display = 'none';
+    if (activeId === id) {
+      const langObj = LANGS.find(l=>l.name===tab?.lang)||LANGS[0];
+      cm.setOption('mode', langObj.mode);
+      document.getElementById('lang-selector').textContent = tab?.lang||'Plain Text';
+    }
+  };
+}
+
+// ── Status Bar ──
+function updateStatus() {
+  const tab = getActiveTab();
+  document.getElementById('sb-file').textContent = tab ? tab.name : 'No file';
+  document.getElementById('sb-dirty').textContent = tab?.dirty ? '● Modified' : '';
+  document.getElementById('lang-selector').textContent = tab?.lang || 'Plain Text';
+  if (cm) {
+    const c = cm.getCursor();
+    document.getElementById('sb-pos').textContent = `Ln ${c.line+1}, Col ${c.ch+1}`;
+    const sel = cm.getSelection();
+    document.getElementById('sb-sel').textContent = sel ? `Sel: ${sel.length}` : '';
+  }
+}
+
+// ── Language Selector ──
+document.getElementById('lang-selector').onclick = () => {
+  const list = document.getElementById('lang-list');
+  list.innerHTML = '';
+  LANGS.forEach(l => {
+    const btn = document.createElement('button');
+    btn.className = 'btn'; btn.style.cssText='text-align:left;width:100%;';
+    btn.textContent = l.name;
+    btn.onclick = () => {
+      const tab = getActiveTab(); if (!tab) return;
+      tab.lang = l.name;
+      cm.setOption('mode', l.mode);
+      document.getElementById('lang-selector').textContent = l.name;
+      document.getElementById('lang-modal').style.display = 'none';
+      saveFiles();
+    };
+    list.appendChild(btn);
+  });
+  document.getElementById('lang-modal').style.display = 'flex';
+};
+document.getElementById('lang-modal').addEventListener('click', e => { if(e.target===document.getElementById('lang-modal')) document.getElementById('lang-modal').style.display='none'; });
+
+// ── Find / Replace ──
+let _cursor = null;
+const findBar = document.getElementById('find-bar');
+const findInput = document.getElementById('find-input');
+const replaceInput = document.getElementById('replace-input');
+const findCount = document.getElementById('find-count');
+
+function openFind(mode='find') {
+  _findMode = mode;
+  findBar.classList.add('open');
+  replaceInput.style.display = mode==='replace' ? '' : 'none';
+  document.getElementById('btn-replace').style.display = mode==='replace' ? '' : 'none';
+  document.getElementById('btn-replace-all').style.display = mode==='replace' ? '' : 'none';
+  findInput.focus(); findInput.select();
+}
+
+document.getElementById('btn-close-find').onclick = () => { findBar.classList.remove('open'); cm.focus(); };
+document.getElementById('btn-find-next').onclick = () => findNext(1);
+document.getElementById('btn-find-prev').onclick = () => findNext(-1);
+document.getElementById('btn-replace').onclick = () => doReplace();
+document.getElementById('btn-replace-all').onclick = () => doReplaceAll();
+
+findInput.addEventListener('input', () => { _cursor = null; countMatches(); });
+findInput.addEventListener('keydown', e => { if(e.key==='Enter') { e.shiftKey?findNext(-1):findNext(1); } if(e.key==='Escape') { findBar.classList.remove('open'); cm.focus(); }});
+
+function getSearchOpts() {
+  return {
+    caseFold: !document.getElementById('find-case').checked,
+    regexp: document.getElementById('find-regex').checked,
+    wholeWord: document.getElementById('find-whole').checked,
+  };
+}
+
+function findNext(dir=1) {
+  const q = findInput.value; if(!q) return;
+  const opts = getSearchOpts();
+  if (dir===1) {
+    _cursor = cm.getSearchCursor(getQuery(q,opts), _cursor ? _cursor.to() : cm.getCursor());
+    if (!_cursor.find()) { _cursor = cm.getSearchCursor(getQuery(q,opts), {line:0,ch:0}); _cursor.find(); }
+  } else {
+    _cursor = cm.getSearchCursor(getQuery(q,opts), _cursor ? _cursor.from() : cm.getCursor(), {backwards:true});
+    if (!_cursor.findPrevious()) { _cursor = cm.getSearchCursor(getQuery(q,opts), {line:cm.lineCount(),ch:0}, {backwards:true}); _cursor.findPrevious(); }
+  }
+  if (_cursor.from()) { cm.setSelection(_cursor.from(), _cursor.to()); cm.scrollIntoView({from:_cursor.from(),to:_cursor.to()}, 100); }
+}
+
+function getQuery(q, opts) {
+  if (opts.regexp) { try { return new RegExp(q, opts.caseFold?'i':''); } catch { return q; } }
+  if (opts.wholeWord) { try { return new RegExp('\\b'+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b', opts.caseFold?'i':''); } catch { return q; } }
+  return opts.caseFold ? q.toLowerCase() : q;
+  // CodeMirror handles string case-insensitive via the caseFold option
+}
+
+function countMatches() {
+  const q = findInput.value; if(!q) { findCount.textContent=''; return; }
+  let c=0, cur = cm.getSearchCursor(q, {line:0,ch:0});
+  while(cur.findNext()) c++;
+  findCount.textContent = c ? `${c} match${c!==1?'es':''}` : 'No matches';
+}
+
+function doReplace() {
+  if (!_cursor || !_cursor.from()) { findNext(1); return; }
+  _cursor.replace(replaceInput.value);
+  findNext(1);
+  debounceSave();
+}
+
+function doReplaceAll() {
+  const q=findInput.value, r=replaceInput.value; if(!q) return;
+  let c=0, cur=cm.getSearchCursor(q,{line:0,ch:0});
+  cm.operation(() => { while(cur.findNext()) { cur.replace(r); c++; } });
+  findCount.textContent = `Replaced ${c}`;
+  debounceSave();
+}
+
+// ── Actions ──
+const actions = {
+  'new': () => { document.getElementById('new-file-name').value='untitled.txt'; document.getElementById('new-file-modal').style.display='flex'; setTimeout(()=>document.getElementById('new-file-name').select(),50); },
+  'open-file': () => document.getElementById('file-input').click(),
+  'save': () => { const tab=getActiveTab(); if(tab) saveTab(tab.id); },
+  'save-as': () => { const tab=getActiveTab(); if(!tab) return; renameTab(tab.id); },
+  'download': () => { const tab=getActiveTab(); if(tab) downloadTab(tab.id); },
+  'close-tab': () => { if(activeId) closeTab(activeId); },
+  'close-all': () => { [...tabs].forEach(t=>closeTab(t.id)); },
+  'undo': () => cm?.undo(),
+  'redo': () => cm?.redo(),
+  'cut': () => { const s=cm?.getSelection(); if(s){navigator.clipboard?.writeText(s); cm.replaceSelection('');} },
+  'copy': () => { const s=cm?.getSelection(); if(s) navigator.clipboard?.writeText(s); },
+  'paste': () => navigator.clipboard?.readText().then(t=>cm?.replaceSelection(t)),
+  'select-all': () => cm?.execCommand('selectAll'),
+  'toggle-comment': () => cm?.execCommand('toggleComment'),
+  'indent': () => cm?.execCommand('indentMore'),
+  'dedent': () => cm?.execCommand('indentLess'),
+  'find': () => openFind('find'),
+  'find-replace': () => openFind('replace'),
+  'goto-line': () => { document.getElementById('goto-modal').style.display='flex'; setTimeout(()=>document.getElementById('goto-line-input').focus(),50); },
+  'toggle-explorer': () => { prefs.explorerVisible=!prefs.explorerVisible; savePrefs(); applyPrefs(); },
+  'toggle-toolbar': () => { prefs.toolbarVisible=!prefs.toolbarVisible; savePrefs(); applyPrefs(); },
+  'toggle-statusbar': () => { prefs.statusbarVisible=!prefs.statusbarVisible; savePrefs(); applyPrefs(); },
+  'toggle-wordwrap': () => { prefs.wordwrap=!prefs.wordwrap; savePrefs(); applyPrefs(); },
+  'toggle-linenumbers': () => { prefs.linenums=!prefs.linenums; savePrefs(); applyPrefs(); },
+  'toggle-fold': () => { prefs.folding=!prefs.folding; savePrefs(); applyPrefs(); },
+  'zoom-in': () => { prefs.fontSize=Math.min(32,prefs.fontSize+1); savePrefs(); applyPrefs(); },
+  'zoom-out': () => { prefs.fontSize=Math.max(8,prefs.fontSize-1); savePrefs(); applyPrefs(); },
+  'zoom-reset': () => { prefs.fontSize=DEFAULT_PREFS.fontSize; savePrefs(); applyPrefs(); },
+  'open-settings': () => openSettings(),
+};
+
+// ── Event delegation ──
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-action]');
+  if (el) {
+    const a = actions[el.dataset.action];
+    if (a) { a(); closeMenus(); }
+  }
+  if (!e.target.closest('.menu-item')) closeMenus();
+});
+
+function closeMenus() { document.querySelectorAll('.menu-item.open').forEach(m=>m.classList.remove('open')); }
+
+// Menu toggle
+document.querySelectorAll('.menu-item > span').forEach(s => {
+  s.addEventListener('click', e => {
+    e.stopPropagation();
+    const open = s.parentElement.classList.contains('open');
+    closeMenus();
+    if (!open) s.parentElement.classList.add('open');
+  });
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  const ctrl = e.ctrlKey||e.metaKey;
+  if (ctrl) {
+    if (e.key==='n') { e.preventDefault(); actions['new'](); }
+    else if (e.key==='o') { e.preventDefault(); actions['open-file'](); }
+    else if (e.key==='s' && e.shiftKey) { e.preventDefault(); actions['save-as'](); }
+    else if (e.key==='s') { e.preventDefault(); actions['save'](); }
+    else if (e.key==='d') { e.preventDefault(); actions['download'](); }
+    else if (e.key==='w') { e.preventDefault(); actions['close-tab'](); }
+    else if (e.key==='f') { e.preventDefault(); actions['find'](); }
+    else if (e.key==='h') { e.preventDefault(); actions['find-replace'](); }
+    else if (e.key==='g') { e.preventDefault(); actions['goto-line'](); }
+    else if (e.key==='=' || e.key==='+') { e.preventDefault(); actions['zoom-in'](); }
+    else if (e.key==='-') { e.preventDefault(); actions['zoom-out'](); }
+    else if (e.key==='0') { e.preventDefault(); actions['zoom-reset'](); }
+    // Tab navigation
+    else if (e.key==='Tab' && !e.shiftKey && tabs.length>1) {
+      // let CM handle tabs — don't override
+    }
+  }
+  if (e.key==='Escape') { closeMenus(); findBar.classList.remove('open'); removeCtx(); }
+});
+
+// ── File input ──
+document.getElementById('file-input').addEventListener('change', e => {
+  const fileList = [...e.target.files];
+  fileList.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const content = ev.target.result;
+      createTab(file.name, content);
+    };
+    reader.readAsText(file);
+  });
+  e.target.value = '';
+});
+
+// ── New file modal ──
+document.getElementById('confirm-new-file').onclick = () => {
+  const name = document.getElementById('new-file-name').value.trim() || 'untitled.txt';
+  document.getElementById('new-file-modal').style.display = 'none';
+  createTab(name, '');
+};
+document.getElementById('cancel-new-file').onclick = () => { document.getElementById('new-file-modal').style.display='none'; };
+document.getElementById('new-file-name').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('confirm-new-file').click(); if(e.key==='Escape') document.getElementById('cancel-new-file').click(); });
+document.getElementById('new-file-modal').addEventListener('click', e => { if(e.target===document.getElementById('new-file-modal')) document.getElementById('cancel-new-file').click(); });
+
+// Explorer new file button
+document.getElementById('btn-new-file').onclick = () => actions['new']();
+
+// ── Rename modal ──
+document.getElementById('cancel-rename').onclick = () => { document.getElementById('rename-modal').style.display='none'; };
+document.getElementById('rename-input').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('confirm-rename').click(); if(e.key==='Escape') document.getElementById('cancel-rename').click(); });
+document.getElementById('rename-modal').addEventListener('click', e => { if(e.target===document.getElementById('rename-modal')) document.getElementById('cancel-rename').click(); });
+
+// ── Go to line modal ──
+document.getElementById('confirm-goto').onclick = () => {
+  const ln = parseInt(document.getElementById('goto-line-input').value) - 1;
+  if (!isNaN(ln)) { cm.setCursor(ln, 0); cm.scrollIntoView({line:ln,ch:0}, 200); cm.focus(); }
+  document.getElementById('goto-modal').style.display = 'none';
+};
+document.getElementById('cancel-goto').onclick = () => { document.getElementById('goto-modal').style.display='none'; };
+document.getElementById('goto-line-input').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('confirm-goto').click(); if(e.key==='Escape') document.getElementById('cancel-goto').click(); });
+document.getElementById('goto-modal').addEventListener('click', e => { if(e.target===document.getElementById('goto-modal')) document.getElementById('cancel-goto').click(); });
+
+// ── Settings ──
+function openSettings() {
+  document.getElementById('pref-font').value = prefs.font;
+  document.getElementById('pref-font-size').value = prefs.fontSize;
+  document.getElementById('pref-tab-size').value = prefs.tabSize;
+  document.getElementById('pref-spaces').checked = prefs.spaces;
+  document.getElementById('pref-wordwrap').checked = prefs.wordwrap;
+  document.getElementById('pref-linenums').checked = prefs.linenums;
+  document.getElementById('pref-closebrackets').checked = prefs.closebrackets;
+  document.getElementById('pref-activeline').checked = prefs.activeline;
+  document.getElementById('pref-folding').checked = prefs.folding;
+  document.getElementById('pref-matchbrackets').checked = prefs.matchbrackets;
+  document.getElementById('settings-modal').style.display = 'flex';
+}
+document.getElementById('save-settings').onclick = () => {
+  prefs.font = document.getElementById('pref-font').value;
+  prefs.fontSize = parseInt(document.getElementById('pref-font-size').value)||14;
+  prefs.tabSize = parseInt(document.getElementById('pref-tab-size').value)||2;
+  prefs.spaces = document.getElementById('pref-spaces').checked;
+  prefs.wordwrap = document.getElementById('pref-wordwrap').checked;
+  prefs.linenums = document.getElementById('pref-linenums').checked;
+  prefs.closebrackets = document.getElementById('pref-closebrackets').checked;
+  prefs.activeline = document.getElementById('pref-activeline').checked;
+  prefs.folding = document.getElementById('pref-folding').checked;
+  prefs.matchbrackets = document.getElementById('pref-matchbrackets').checked;
+  savePrefs(); applyPrefs();
+  document.getElementById('settings-modal').style.display = 'none';
+};
+document.getElementById('cancel-settings').onclick = () => { document.getElementById('settings-modal').style.display='none'; };
+document.getElementById('settings-modal').addEventListener('click', e => { if(e.target===document.getElementById('settings-modal')) document.getElementById('cancel-settings').click(); });
+
+// ── Explorer Resizer ──
+const resizer = document.getElementById('resizer');
+const explorer = document.getElementById('explorer');
+let _resizing = false, _rStartX, _rStartW;
+resizer.addEventListener('mousedown', e => {
+  if (!prefs.explorerVisible) return;
+  _resizing=true; _rStartX=e.clientX; _rStartW=explorer.offsetWidth;
+  resizer.classList.add('dragging');
+  document.body.style.cursor='col-resize'; document.body.style.userSelect='none';
+});
+document.addEventListener('mousemove', e => {
+  if (!_resizing) return;
+  const w = Math.max(120, Math.min(500, _rStartW + e.clientX - _rStartX));
+  explorer.style.width = w+'px';
+  document.documentElement.style.setProperty('--explorer-w', w+'px');
+});
+document.addEventListener('mouseup', () => { if(_resizing){_resizing=false;resizer.classList.remove('dragging');document.body.style.cursor='';document.body.style.userSelect='';} });
+
+// ── Drag & Drop files ──
+document.addEventListener('dragover', e => e.preventDefault());
+document.addEventListener('drop', e => {
+  e.preventDefault();
+  const files = [...e.dataTransfer.files];
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = ev => createTab(file.name, ev.target.result);
+    reader.readAsText(file);
+  });
+});
+
+// ── Helpers ──
+function escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ── Init ──
+function init() {
+  loadPrefs();
+  loadFiles();
+  initCM();
+
+  // restore tabs from localStorage
+  if (tabs.length > 0) {
+    tabs = tabs.map(t => ({
+      ...t,
+      content: files[t.id]?.content || '',
+      dirty: false,
+    }));
+    renderTabs();
+    renderExplorer();
+    const toOpen = activeId && tabs.find(t=>t.id===activeId) ? activeId : tabs[0]?.id;
+    if (toOpen) openTab(toOpen);
+    else { document.getElementById('no-file').style.display=''; cm.getWrapperElement().style.display='none'; }
+  } else {
+    document.getElementById('no-file').style.display='';
+    cm.getWrapperElement().style.display='none';
+    renderExplorer();
+  }
+}
+
+init();
+</script>
+</body>
+</html>
