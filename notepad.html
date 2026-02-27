@@ -65,6 +65,7 @@
   --explorer-w: 220px;
   --font: 'Iosevka', 'Cascadia Code', 'Fira Code', monospace;
 }
+/* ── theme token overrides (injected by JS) ── */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; overflow: hidden; background: var(--bg0); color: var(--text); font-family: var(--font); font-size: 13px; }
 
@@ -137,33 +138,33 @@ html, body { height: 100%; overflow: hidden; background: var(--bg0); color: var(
 .CodeMirror-gutters { background: var(--bg0) !important; border-right: 1px solid var(--border) !important; }
 .CodeMirror-linenumber { color: var(--text-muted) !important; padding: 0 6px; }
 .CodeMirror-cursor { border-left: 2px solid var(--accent) !important; }
-.CodeMirror-selected { background: rgba(86,156,214,.25) !important; }
+.CodeMirror-selected { background: rgba(127,127,200,.22) !important; }
 .CodeMirror-activeline-background { background: rgba(255,255,255,.04) !important; }
 .CodeMirror-matchingbracket { color: var(--accent2) !important; font-weight: bold; text-decoration: underline; }
 .CodeMirror-foldgutter-open, .CodeMirror-foldgutter-folded { color: var(--text-dim); cursor: pointer; }
 .CodeMirror-foldmarker { color: var(--accent); background: var(--bg3); border: 1px solid var(--border); border-radius: 3px; padding: 0 4px; font-size: 11px; }
-/* CM tokens — VSCode-like */
-.cm-keyword { color: #569cd6 !important; }
-.cm-atom { color: #569cd6 !important; }
-.cm-number { color: #b5cea8 !important; }
-.cm-def { color: #dcdcaa !important; }
-.cm-variable { color: #9cdcfe !important; }
-.cm-variable-2 { color: #9cdcfe !important; }
-.cm-variable-3, .cm-type { color: #4ec9b0 !important; }
-.cm-property { color: #9cdcfe !important; }
-.cm-operator { color: #d4d4d4 !important; }
-.cm-comment { color: #6a9955 !important; font-style: italic; }
-.cm-string { color: #ce9178 !important; }
-.cm-string-2 { color: #ce9178 !important; }
-.cm-meta { color: #9b9b9b !important; }
-.cm-qualifier { color: #4ec9b0 !important; }
-.cm-builtin { color: #dcdcaa !important; }
-.cm-bracket { color: #d4d4d4 !important; }
-.cm-tag { color: #569cd6 !important; }
-.cm-attribute { color: #9cdcfe !important; }
-.cm-hr { color: #6a9955 !important; }
-.cm-link { color: #ce9178 !important; text-decoration: underline; }
-.cm-error { color: #f44747 !important; }
+/* CM tokens — driven by CSS variables set per-theme */
+.cm-keyword    { color: var(--tk-keyword)   !important; }
+.cm-atom       { color: var(--tk-keyword)   !important; }
+.cm-number     { color: var(--tk-number)    !important; }
+.cm-def        { color: var(--tk-def)       !important; }
+.cm-variable   { color: var(--tk-variable)  !important; }
+.cm-variable-2 { color: var(--tk-variable)  !important; }
+.cm-variable-3,.cm-type { color: var(--tk-type)  !important; }
+.cm-property   { color: var(--tk-variable)  !important; }
+.cm-operator   { color: var(--tk-operator)  !important; }
+.cm-comment    { color: var(--tk-comment)   !important; font-style: italic; }
+.cm-string     { color: var(--tk-string)    !important; }
+.cm-string-2   { color: var(--tk-string)    !important; }
+.cm-meta       { color: var(--tk-meta)      !important; }
+.cm-qualifier  { color: var(--tk-type)      !important; }
+.cm-builtin    { color: var(--tk-def)       !important; }
+.cm-bracket    { color: var(--tk-operator)  !important; }
+.cm-tag        { color: var(--tk-keyword)   !important; }
+.cm-attribute  { color: var(--tk-variable)  !important; }
+.cm-hr         { color: var(--tk-comment)   !important; }
+.cm-link       { color: var(--tk-string)    !important; text-decoration: underline; }
+.cm-error      { color: var(--red)          !important; }
 
 /* ── STATUS BAR ── */
 #statusbar { display: flex; align-items: center; justify-content: space-between; height: var(--status-h); background: var(--bg0); border-top: 1px solid var(--border); padding: 0 10px; font-size: 11.5px; color: var(--text-dim); flex-shrink: 0; }
@@ -260,6 +261,8 @@ html, body { height: 100%; overflow: hidden; background: var(--bg0); color: var(
         <li data-action="toggle-comment"><span class="check"></span>Toggle Comment <span class="shortcut">Ctrl+/</span></li>
         <li data-action="indent"><span class="check"></span>Indent <span class="shortcut">Tab</span></li>
         <li data-action="dedent"><span class="check"></span>Dedent <span class="shortcut">Shift+Tab</span></li>
+        <hr>
+        <li data-action="format"><span class="check"></span>Format Document <span class="shortcut">Shift+Alt+F</span></li>
       </ul>
     </div>
     <div class="menu-item" id="m-search">
@@ -306,6 +309,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg0); color: var(
     <div class="tb-sep"></div>
     <div class="tb-btn" title="Find (Ctrl+F)" data-action="find">🔍</div>
     <div class="tb-btn" title="Replace (Ctrl+H)" data-action="find-replace">🔄</div>
+    <div class="tb-btn" title="Format Document (Shift+Alt+F)" data-action="format">✨</div>
     <div class="tb-sep"></div>
     <div class="tb-btn" title="Toggle Explorer" data-action="toggle-explorer">📁</div>
     <div class="tb-btn" title="Preferences" data-action="open-settings">⚙️</div>
@@ -409,6 +413,25 @@ html, body { height: 100%; overflow: hidden; background: var(--bg0); color: var(
   <div class="modal" id="settings-modal-inner" style="min-width:420px">
     <h3>⚙️ Preferences</h3>
     <div class="setting-row">
+      <label>UI Theme</label>
+      <select id="pref-theme">
+        <option value="vscode-dark">VSCode Dark+</option>
+        <option value="gruvbox-dark">Gruvbox Dark</option>
+        <option value="gruvbox-light">Gruvbox Light</option>
+        <option value="gruber-darker">Gruber Darker</option>
+        <option value="one-dark">One Dark Pro</option>
+        <option value="monokai">Monokai</option>
+        <option value="dracula">Dracula</option>
+        <option value="nord">Nord</option>
+        <option value="solarized-dark">Solarized Dark</option>
+        <option value="solarized-light">Solarized Light</option>
+        <option value="tokyo-night">Tokyo Night</option>
+        <option value="catppuccin-mocha">Catppuccin Mocha</option>
+        <option value="github-dark">GitHub Dark</option>
+        <option value="material-ocean">Material Ocean</option>
+      </select>
+    </div>
+    <div class="setting-row">
       <label>Font Family</label>
       <select id="pref-font">
         <option value="'Iosevka', monospace">Iosevka</option>
@@ -483,6 +506,99 @@ const LS_TABS    = 'npx:tabs';
 const LS_PREFS   = 'npx:prefs';
 const LS_ACTIVE  = 'npx:active';
 
+// ═══════════════════════════════════════════════════════
+//  THEMES
+// ═══════════════════════════════════════════════════════
+// Each theme: ui (CSS vars) + tk (token colors)
+const THEMES = {
+  'vscode-dark': {
+    label: 'VSCode Dark+',
+    ui: { bg0:'#1a1b1e', bg1:'#222327', bg2:'#2a2b2f', bg3:'#313236', bg4:'#3d3e44', border:'#3a3b40', text:'#d4d4d4', 'text-dim':'#7a7b82', 'text-muted':'#55565c', accent:'#569cd6', accent2:'#4ec9b0', red:'#f44747', green:'#6a9955', orange:'#ce9178' },
+    tk: { keyword:'#569cd6', number:'#b5cea8', def:'#dcdcaa', variable:'#9cdcfe', type:'#4ec9b0', operator:'#d4d4d4', comment:'#6a9955', string:'#ce9178', meta:'#9b9b9b' }
+  },
+  'gruvbox-dark': {
+    label: 'Gruvbox Dark',
+    ui: { bg0:'#1d2021', bg1:'#282828', bg2:'#32302f', bg3:'#3c3836', bg4:'#504945', border:'#504945', text:'#ebdbb2', 'text-dim':'#a89984', 'text-muted':'#665c54', accent:'#83a598', accent2:'#8ec07c', red:'#fb4934', green:'#b8bb26', orange:'#fe8019' },
+    tk: { keyword:'#fb4934', number:'#d3869b', def:'#fabd2f', variable:'#83a598', type:'#8ec07c', operator:'#ebdbb2', comment:'#928374', string:'#b8bb26', meta:'#a89984' }
+  },
+  'gruvbox-light': {
+    label: 'Gruvbox Light',
+    ui: { bg0:'#f9f5d7', bg1:'#fbf1c7', bg2:'#f2e5bc', bg3:'#ebdbb2', bg4:'#d5c4a1', border:'#bdae93', text:'#3c3836', 'text-dim':'#665c54', 'text-muted':'#7c6f64', accent:'#076678', accent2:'#427b58', red:'#9d0006', green:'#79740e', orange:'#af3a03' },
+    tk: { keyword:'#9d0006', number:'#8f3f71', def:'#b57614', variable:'#076678', type:'#427b58', operator:'#3c3836', comment:'#928374', string:'#79740e', meta:'#665c54' }
+  },
+  'gruber-darker': {
+    label: 'Gruber Darker',
+    ui: { bg0:'#181818', bg1:'#1c1c1c', bg2:'#252525', bg3:'#2a2a2a', bg4:'#383838', border:'#333333', text:'#e4e4ef', 'text-dim':'#9ea3b5', 'text-muted':'#5a5f73', accent:'#96a6c8', accent2:'#73c936', red:'#f43841', green:'#73c936', orange:'#cc8c3c' },
+    tk: { keyword:'#96a6c8', number:'#9e95c7', def:'#73c936', variable:'#e4e4ef', type:'#96a6c8', operator:'#e4e4ef', comment:'#697065', string:'#cc8c3c', meta:'#9ea3b5' }
+  },
+  'one-dark': {
+    label: 'One Dark Pro',
+    ui: { bg0:'#21252b', bg1:'#282c34', bg2:'#2c313a', bg3:'#3a3f4b', bg4:'#4b5263', border:'#3e4451', text:'#abb2bf', 'text-dim':'#5c6370', 'text-muted':'#4b5263', accent:'#61afef', accent2:'#56b6c2', red:'#e06c75', green:'#98c379', orange:'#e5c07b' },
+    tk: { keyword:'#c678dd', number:'#d19a66', def:'#61afef', variable:'#e06c75', type:'#56b6c2', operator:'#abb2bf', comment:'#5c6370', string:'#98c379', meta:'#abb2bf' }
+  },
+  'monokai': {
+    label: 'Monokai',
+    ui: { bg0:'#1e1e1e', bg1:'#272822', bg2:'#2d2e27', bg3:'#3e3d32', bg4:'#49483e', border:'#3e3d32', text:'#f8f8f2', 'text-dim':'#75715e', 'text-muted':'#49483e', accent:'#66d9e8', accent2:'#a6e22e', red:'#f92672', green:'#a6e22e', orange:'#fd971f' },
+    tk: { keyword:'#f92672', number:'#ae81ff', def:'#a6e22e', variable:'#f8f8f2', type:'#66d9e8', operator:'#f92672', comment:'#75715e', string:'#e6db74', meta:'#75715e' }
+  },
+  'dracula': {
+    label: 'Dracula',
+    ui: { bg0:'#191a21', bg1:'#282a36', bg2:'#21222c', bg3:'#343746', bg4:'#44475a', border:'#44475a', text:'#f8f8f2', 'text-dim':'#6272a4', 'text-muted':'#44475a', accent:'#bd93f9', accent2:'#50fa7b', red:'#ff5555', green:'#50fa7b', orange:'#ffb86c' },
+    tk: { keyword:'#ff79c6', number:'#bd93f9', def:'#50fa7b', variable:'#f8f8f2', type:'#8be9fd', operator:'#ff79c6', comment:'#6272a4', string:'#f1fa8c', meta:'#6272a4' }
+  },
+  'nord': {
+    label: 'Nord',
+    ui: { bg0:'#2e3440', bg1:'#3b4252', bg2:'#434c5e', bg3:'#4c566a', bg4:'#546278', border:'#4c566a', text:'#d8dee9', 'text-dim':'#7b88a1', 'text-muted':'#616e88', accent:'#88c0d0', accent2:'#a3be8c', red:'#bf616a', green:'#a3be8c', orange:'#d08770' },
+    tk: { keyword:'#81a1c1', number:'#b48ead', def:'#88c0d0', variable:'#d8dee9', type:'#8fbcbb', operator:'#eceff4', comment:'#616e88', string:'#a3be8c', meta:'#7b88a1' }
+  },
+  'solarized-dark': {
+    label: 'Solarized Dark',
+    ui: { bg0:'#00212b', bg1:'#002b36', bg2:'#073642', bg3:'#094555', bg4:'#0d5263', border:'#094555', text:'#839496', 'text-dim':'#586e75', 'text-muted':'#073642', accent:'#268bd2', accent2:'#2aa198', red:'#dc322f', green:'#859900', orange:'#cb4b16' },
+    tk: { keyword:'#859900', number:'#d33682', def:'#268bd2', variable:'#839496', type:'#2aa198', operator:'#657b83', comment:'#586e75', string:'#2aa198', meta:'#657b83' }
+  },
+  'solarized-light': {
+    label: 'Solarized Light',
+    ui: { bg0:'#fdf6e3', bg1:'#eee8d5', bg2:'#e8e2d0', bg3:'#ddd8c7', bg4:'#d0cab9', border:'#cdc7b5', text:'#657b83', 'text-dim':'#839496', 'text-muted':'#93a1a1', accent:'#268bd2', accent2:'#2aa198', red:'#dc322f', green:'#859900', orange:'#cb4b16' },
+    tk: { keyword:'#859900', number:'#d33682', def:'#268bd2', variable:'#657b83', type:'#2aa198', operator:'#073642', comment:'#93a1a1', string:'#2aa198', meta:'#839496' }
+  },
+  'tokyo-night': {
+    label: 'Tokyo Night',
+    ui: { bg0:'#16161e', bg1:'#1a1b2e', bg2:'#1f2035', bg3:'#2a2b45', bg4:'#3b3d62', border:'#292e42', text:'#a9b1d6', 'text-dim':'#565f89', 'text-muted':'#3b3d62', accent:'#7aa2f7', accent2:'#73daca', red:'#f7768e', green:'#9ece6a', orange:'#e0af68' },
+    tk: { keyword:'#bb9af7', number:'#ff9e64', def:'#7aa2f7', variable:'#c0caf5', type:'#2ac3de', operator:'#89ddff', comment:'#565f89', string:'#9ece6a', meta:'#7dcfff' }
+  },
+  'catppuccin-mocha': {
+    label: 'Catppuccin Mocha',
+    ui: { bg0:'#11111b', bg1:'#1e1e2e', bg2:'#181825', bg3:'#313244', bg4:'#45475a', border:'#313244', text:'#cdd6f4', 'text-dim':'#7f849c', 'text-muted':'#585b70', accent:'#89b4fa', accent2:'#94e2d5', red:'#f38ba8', green:'#a6e3a1', orange:'#fab387' },
+    tk: { keyword:'#cba6f7', number:'#fab387', def:'#89b4fa', variable:'#cdd6f4', type:'#94e2d5', operator:'#89dceb', comment:'#6c7086', string:'#a6e3a1', meta:'#7f849c' }
+  },
+  'github-dark': {
+    label: 'GitHub Dark',
+    ui: { bg0:'#0d1117', bg1:'#161b22', bg2:'#1c2128', bg3:'#21262d', bg4:'#30363d', border:'#30363d', text:'#e6edf3', 'text-dim':'#8b949e', 'text-muted':'#484f58', accent:'#58a6ff', accent2:'#3fb950', red:'#f85149', green:'#3fb950', orange:'#d29922' },
+    tk: { keyword:'#ff7b72', number:'#79c0ff', def:'#d2a8ff', variable:'#ffa657', type:'#79c0ff', operator:'#ff7b72', comment:'#8b949e', string:'#a5d6ff', meta:'#8b949e' }
+  },
+  'material-ocean': {
+    label: 'Material Ocean',
+    ui: { bg0:'#0f111a', bg1:'#090b10', bg2:'#161720', bg3:'#1e2030', bg4:'#2f3354', border:'#1f2233', text:'#8f93a2', 'text-dim':'#464b5d', 'text-muted':'#2f3354', accent:'#82aaff', accent2:'#89ddff', red:'#f07178', green:'#c3e88d', orange:'#f78c6c' },
+    tk: { keyword:'#c792ea', number:'#f78c6c', def:'#82aaff', variable:'#eeffff', type:'#89ddff', operator:'#89ddff', comment:'#546e7a', string:'#c3e88d', meta:'#8f93a2' }
+  },
+};
+
+// Inject a <style id="theme-tokens"> into head that sets :root vars
+const _themeStyleEl = document.createElement('style');
+_themeStyleEl.id = 'theme-tokens';
+document.head.appendChild(_themeStyleEl);
+
+function applyTheme(themeId) {
+  const t = THEMES[themeId] || THEMES['vscode-dark'];
+  const ui = t.ui, tk = t.tk;
+  // Build :root block
+  let css = ':root {\n';
+  for (const [k,v] of Object.entries(ui)) css += `  --${k}: ${v};\n`;
+  for (const [k,v] of Object.entries(tk)) css += `  --tk-${k}: ${v};\n`;
+  css += '}';
+  _themeStyleEl.textContent = css;
+}
+
 // ── Language Map ──
 const LANGS = [
   { name: 'Plain Text',   mode: null,                   exts: ['txt','log','text'] },
@@ -531,6 +647,7 @@ let _findMode = 'find'; // 'find' | 'replace'
 
 // ── Prefs ──
 const DEFAULT_PREFS = {
+  theme: 'vscode-dark',
   font: "'Iosevka', monospace",
   fontSize: 14,
   tabSize: 2,
@@ -584,6 +701,9 @@ function initCM() {
       'Ctrl-D': () => actions['download'](),
       'Ctrl-F': () => actions['find'](),
       'Ctrl-H': () => actions['find-replace'](),
+      'Shift-Alt-F': () => actions['format'](),
+      'Ctrl-Tab': () => { const i=tabs.findIndex(t=>t.id===activeId); if(tabs[i+1]) openTab(tabs[i+1].id); else if(tabs[0]) openTab(tabs[0].id); },
+      'Shift-Ctrl-Tab': () => { const i=tabs.findIndex(t=>t.id===activeId); if(tabs[i-1]) openTab(tabs[i-1].id); else if(tabs[tabs.length-1]) openTab(tabs[tabs.length-1].id); },
     },
     foldGutter: true,
     gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
@@ -611,6 +731,7 @@ function debounceSave() {
 // ── Apply Prefs ──
 function applyPrefs() {
   if (!cm) return;
+  applyTheme(prefs.theme || 'vscode-dark');
   document.documentElement.style.setProperty('--font', prefs.font);
   cm.setOption('lineWrapping', prefs.wordwrap);
   cm.setOption('lineNumbers', prefs.linenums);
@@ -962,6 +1083,7 @@ const actions = {
   'toggle-comment': () => cm?.execCommand('toggleComment'),
   'indent': () => cm?.execCommand('indentMore'),
   'dedent': () => cm?.execCommand('indentLess'),
+  'format': () => formatDocument(),
   'find': () => openFind('find'),
   'find-replace': () => openFind('replace'),
   'goto-line': () => { document.getElementById('goto-modal').style.display='flex'; setTimeout(()=>document.getElementById('goto-line-input').focus(),50); },
@@ -1015,11 +1137,9 @@ document.addEventListener('keydown', e => {
     else if (e.key==='=' || e.key==='+') { e.preventDefault(); actions['zoom-in'](); }
     else if (e.key==='-') { e.preventDefault(); actions['zoom-out'](); }
     else if (e.key==='0') { e.preventDefault(); actions['zoom-reset'](); }
-    // Tab navigation
-    else if (e.key==='Tab' && !e.shiftKey && tabs.length>1) {
-      // let CM handle tabs — don't override
-    }
+    else if (e.key==='Tab' && tabs.length>1) { e.preventDefault(); const i=tabs.findIndex(t=>t.id===activeId); openTab(tabs[(i+(e.shiftKey?-1:1)+tabs.length)%tabs.length].id); }
   }
+  if ((e.altKey && e.shiftKey && e.key==='F') || (e.ctrlKey && e.key==='F' && e.shiftKey && e.altKey)) { e.preventDefault(); actions['format'](); }
   if (e.key==='Escape') { closeMenus(); findBar.classList.remove('open'); removeCtx(); }
 });
 
@@ -1067,6 +1187,7 @@ document.getElementById('goto-modal').addEventListener('click', e => { if(e.targ
 
 // ── Settings ──
 function openSettings() {
+  document.getElementById('pref-theme').value = prefs.theme || 'vscode-dark';
   document.getElementById('pref-font').value = prefs.font;
   document.getElementById('pref-font-size').value = prefs.fontSize;
   document.getElementById('pref-tab-size').value = prefs.tabSize;
@@ -1080,6 +1201,7 @@ function openSettings() {
   document.getElementById('settings-modal').style.display = 'flex';
 }
 document.getElementById('save-settings').onclick = () => {
+  prefs.theme = document.getElementById('pref-theme').value;
   prefs.font = document.getElementById('pref-font').value;
   prefs.fontSize = parseInt(document.getElementById('pref-font-size').value)||14;
   prefs.tabSize = parseInt(document.getElementById('pref-tab-size').value)||2;
@@ -1093,7 +1215,13 @@ document.getElementById('save-settings').onclick = () => {
   savePrefs(); applyPrefs();
   document.getElementById('settings-modal').style.display = 'none';
 };
-document.getElementById('cancel-settings').onclick = () => { document.getElementById('settings-modal').style.display='none'; };
+document.getElementById('cancel-settings').onclick = () => {
+  // restore original theme on cancel
+  applyTheme(prefs.theme || 'vscode-dark');
+  document.getElementById('settings-modal').style.display='none';
+};
+// live preview
+document.getElementById('pref-theme').addEventListener('change', e => applyTheme(e.target.value));
 document.getElementById('settings-modal').addEventListener('click', e => { if(e.target===document.getElementById('settings-modal')) document.getElementById('cancel-settings').click(); });
 
 // ── Explorer Resizer ──
@@ -1129,9 +1257,188 @@ document.addEventListener('drop', e => {
 // ── Helpers ──
 function escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-// ── Init ──
+// ── Toast ──
+function toast(msg, type='ok') {
+  let el = document.getElementById('toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'toast';
+    el.style.cssText = 'position:fixed;bottom:36px;left:50%;transform:translateX(-50%);padding:7px 18px;border-radius:6px;font-size:12.5px;z-index:99999;pointer-events:none;transition:opacity .3s;font-family:var(--font);';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.style.background = type==='err' ? 'var(--red)' : type==='warn' ? 'var(--orange)' : '#2ea043';
+  el.style.color = '#fff';
+  el.style.opacity = '1';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.style.opacity='0'; }, 2200);
+}
+
+// ── Formatter ──
+function formatDocument() {
+  const tab = getActiveTab();
+  if (!tab) return;
+  const lang = tab.lang || 'Plain Text';
+  const code = cm.getValue();
+  let result;
+  try {
+    result = formatByLang(lang, code, prefs);
+  } catch(e) {
+    toast('Format error: ' + e.message, 'err');
+    return;
+  }
+  if (result === null) { toast('No formatter for ' + lang, 'warn'); return; }
+  if (result === code) { toast('Already formatted ✓'); return; }
+  const cursor = cm.getCursor();
+  cm.setValue(result);
+  cm.setCursor(cursor);
+  tab.content = result;
+  tab.dirty = true;
+  renderTabs();
+  debounceSave();
+  toast('Formatted ✓');
+}
+
+function formatByLang(lang, code, prefs) {
+  const indent = prefs.spaces ? ' '.repeat(prefs.tabSize) : '\t';
+  const L = lang.toLowerCase();
+
+  // JSON — native
+  if (L.includes('json')) {
+    const parsed = JSON.parse(code); // throws on invalid
+    return JSON.stringify(parsed, null, indent);
+  }
+
+  // JS / TS / JSX — basic JS beautifier
+  if (L==='javascript'||L==='typescript'||L==='jsx'||L.includes('script')) {
+    return formatJS(code, indent);
+  }
+
+  // CSS / SCSS
+  if (L==='css'||L==='scss') {
+    return formatCSS(code, indent);
+  }
+
+  // Java / C / C++ / C# / Kotlin / Go / Rust — brace formatter
+  if (['java','c','c++','c#','kotlin','go','rust','php'].some(x=>L.includes(x))) {
+    return formatBraces(code, indent);
+  }
+
+  // HTML / XML — tag formatter
+  if (L==='html'||L==='xml') {
+    return formatXML(code, indent);
+  }
+
+  // Python / YAML / Shell — re-indent only (strip trailing spaces, normalize blank lines)
+  if (L==='python'||L==='yaml'||L==='shell'||L==='markdown'||L==='sql') {
+    return reindent(code, indent, L);
+  }
+
+  return null; // no formatter
+}
+
+/* ─ JS formatter (tokens-based) ─ */
+function formatJS(code, indent) {
+  // Normalize semicolons & brace spacing, then re-indent by brace depth
+  let lines = code.split('\n').map(l => l.trim()).filter((l,i,a) => !(l==='' && a[i-1]===''));
+  let out = [], depth = 0;
+  for (let line of lines) {
+    if (!line) { out.push(''); continue; }
+    // dedent before closing braces
+    const closes = (line.match(/^[}\])]/) || []).length;
+    depth = Math.max(0, depth - closes);
+    out.push(indent.repeat(depth) + line);
+    // count net braces
+    const open  = (line.match(/[{[(]/g)||[]).length;
+    const close = (line.match(/[}\])]/g)||[]).length;
+    depth += open - close + closes;
+    depth = Math.max(0, depth);
+  }
+  return out.join('\n');
+}
+
+/* ─ CSS formatter ─ */
+function formatCSS(code, indent) {
+  // Expand minified CSS, then re-indent
+  let expanded = code
+    .replace(/\s*{\s*/g, ' {\n')
+    .replace(/;\s*/g, ';\n')
+    .replace(/\s*}\s*/g, '\n}\n')
+    .replace(/\n{3,}/g, '\n\n');
+  return formatBraces(expanded, indent);
+}
+
+/* ─ Generic brace indenter ─ */
+function formatBraces(code, indent) {
+  const lines = code.split('\n').map(l => l.trimEnd());
+  let out = [], depth = 0;
+  for (let raw of lines) {
+    const line = raw.trim();
+    if (!line) { out.push(''); continue; }
+    const closes = (line.match(/^[}\])]/) || []).length;
+    depth = Math.max(0, depth - closes);
+    out.push(indent.repeat(depth) + line);
+    const open  = (line.match(/[{[(]/g)||[]).length;
+    const close = (line.match(/[}\])]/g)||[]).length;
+    depth = Math.max(0, depth + open - close + closes);
+  }
+  // remove trailing blank lines, ensure single newline at end
+  while (out.length && out[out.length-1]==='') out.pop();
+  return out.join('\n') + '\n';
+}
+
+/* ─ XML / HTML formatter ─ */
+function formatXML(code, indent) {
+  // Tokenize tags and text
+  const tokens = [];
+  let i = 0, s = code.replace(/>\s+</g, '><').trim();
+  while (i < s.length) {
+    if (s[i] === '<') {
+      let j = s.indexOf('>', i);
+      if (j < 0) j = s.length - 1;
+      tokens.push(s.slice(i, j+1));
+      i = j + 1;
+    } else {
+      let j = s.indexOf('<', i);
+      if (j < 0) j = s.length;
+      const text = s.slice(i, j).trim();
+      if (text) tokens.push(text);
+      i = j;
+    }
+  }
+  let out = [], depth = 0;
+  for (const tok of tokens) {
+    if (tok.startsWith('</')) {
+      depth = Math.max(0, depth - 1);
+      out.push(indent.repeat(depth) + tok);
+    } else if (tok.startsWith('<') && !tok.startsWith('<!') && !tok.startsWith('<?') && !tok.endsWith('/>') && !tok.startsWith('<br') && !tok.startsWith('<input') && !tok.startsWith('<img') && !tok.startsWith('<hr') && !tok.startsWith('<meta') && !tok.startsWith('<link')) {
+      out.push(indent.repeat(depth) + tok);
+      depth++;
+    } else {
+      out.push(indent.repeat(depth) + tok);
+    }
+  }
+  return out.join('\n');
+}
+
+/* ─ Generic re-indent (strip trailing spaces, collapse 3+ blank lines) ─ */
+function reindent(code, indent, lang) {
+  const lines = code.split('\n').map(l => l.trimEnd());
+  // collapse excessive blank lines
+  const out = [];
+  let blanks = 0;
+  for (const l of lines) {
+    if (!l.trim()) { blanks++; if (blanks <= 2) out.push(''); }
+    else { blanks = 0; out.push(l); }
+  }
+  while (out.length && !out[out.length-1]) out.pop();
+  return out.join('\n') + '\n';
+}
+
+
 function init() {
   loadPrefs();
+  applyTheme(prefs.theme || 'vscode-dark'); // apply before CM so no flash
   loadFiles();
   initCM();
 
