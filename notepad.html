@@ -479,6 +479,10 @@ html, body { height: 100%; overflow: hidden; background: var(--bg0); color: var(
       <label>Match Brackets</label>
       <label class="toggle"><input type="checkbox" id="pref-matchbrackets" checked><span class="toggle-slider"></span></label>
     </div>
+    <div class="setting-row">
+      <label>Format on Save</label>
+      <label class="toggle"><input type="checkbox" id="pref-format-on-save"><span class="toggle-slider"></span></label>
+    </div>
     <div class="modal-btns">
       <button class="btn" id="cancel-settings">Cancel</button>
       <button class="btn primary" id="save-settings">Save</button>
@@ -661,6 +665,7 @@ const DEFAULT_PREFS = {
   explorerVisible: true,
   toolbarVisible: true,
   statusbarVisible: true,
+  formatOnSave: false,
 };
 
 function loadPrefs() {
@@ -911,10 +916,31 @@ function removeCtx() { document.querySelectorAll('.ctx-menu').forEach(el=>el.rem
 function saveTab(id) {
   const tab = tabs.find(t=>t.id===id);
   if (!tab) return;
+  // format on save — runs before persisting
+  if (prefs.formatOnSave && id === activeId) {
+    const lang = tab.lang || 'Plain Text';
+    const code = cm.getValue();
+    try {
+      const result = formatByLang(lang, code, prefs);
+      if (result !== null && result !== code) {
+        const cursor = cm.getCursor();
+        const scroll = cm.getScrollInfo();
+        _ignoreChange = true;
+        cm.setValue(result);
+        _ignoreChange = false;
+        cm.setCursor(cursor);
+        cm.scrollTo(scroll.left, scroll.top);
+        tab.content = result;
+      }
+    } catch(e) {
+      toast('Format error: ' + e.message, 'err');
+    }
+  }
   tab.dirty = false;
   files[id] = { name: tab.name, content: tab.content };
   saveFiles();
   renderTabs();
+  toast('Saved ✓');
 }
 
 function downloadTab(id) {
@@ -1198,6 +1224,7 @@ function openSettings() {
   document.getElementById('pref-activeline').checked = prefs.activeline;
   document.getElementById('pref-folding').checked = prefs.folding;
   document.getElementById('pref-matchbrackets').checked = prefs.matchbrackets;
+  document.getElementById('pref-format-on-save').checked = prefs.formatOnSave;
   document.getElementById('settings-modal').style.display = 'flex';
 }
 document.getElementById('save-settings').onclick = () => {
@@ -1212,6 +1239,7 @@ document.getElementById('save-settings').onclick = () => {
   prefs.activeline = document.getElementById('pref-activeline').checked;
   prefs.folding = document.getElementById('pref-folding').checked;
   prefs.matchbrackets = document.getElementById('pref-matchbrackets').checked;
+  prefs.formatOnSave = document.getElementById('pref-format-on-save').checked;
   savePrefs(); applyPrefs();
   document.getElementById('settings-modal').style.display = 'none';
 };
@@ -1290,8 +1318,12 @@ function formatDocument() {
   if (result === null) { toast('No formatter for ' + lang, 'warn'); return; }
   if (result === code) { toast('Already formatted ✓'); return; }
   const cursor = cm.getCursor();
+  const scroll = cm.getScrollInfo();
+  _ignoreChange = true;
   cm.setValue(result);
+  _ignoreChange = false;
   cm.setCursor(cursor);
+  cm.scrollTo(scroll.left, scroll.top);
   tab.content = result;
   tab.dirty = true;
   renderTabs();
@@ -1299,140 +1331,397 @@ function formatDocument() {
   toast('Formatted ✓');
 }
 
+// ════════════════════════════════════════════════════════
+//  FORMATTER ENGINE
+//  Robust tokenizer-aware formatters per language family
+// ════════════════════════════════════════════════════════
 function formatByLang(lang, code, prefs) {
-  const indent = prefs.spaces ? ' '.repeat(prefs.tabSize) : '\t';
+  const ind = prefs.spaces ? ' '.repeat(prefs.tabSize || 2) : '\t';
   const L = lang.toLowerCase();
 
-  // JSON — native
-  if (L.includes('json')) {
-    const parsed = JSON.parse(code); // throws on invalid
-    return JSON.stringify(parsed, null, indent);
-  }
-
-  // JS / TS / JSX — basic JS beautifier
-  if (L==='javascript'||L==='typescript'||L==='jsx'||L.includes('script')) {
-    return formatJS(code, indent);
-  }
-
-  // CSS / SCSS
-  if (L==='css'||L==='scss') {
-    return formatCSS(code, indent);
-  }
-
-  // Java / C / C++ / C# / Kotlin / Go / Rust — brace formatter
-  if (['java','c','c++','c#','kotlin','go','rust','php'].some(x=>L.includes(x))) {
-    return formatBraces(code, indent);
-  }
-
-  // HTML / XML — tag formatter
-  if (L==='html'||L==='xml') {
-    return formatXML(code, indent);
-  }
-
-  // Python / YAML / Shell — re-indent only (strip trailing spaces, normalize blank lines)
-  if (L==='python'||L==='yaml'||L==='shell'||L==='markdown'||L==='sql') {
-    return reindent(code, indent, L);
-  }
-
-  return null; // no formatter
+  if (L.includes('json'))                                       return fmtJSON(code, ind);
+  if (L==='javascript'||L==='typescript'||L.includes('jsx'))   return fmtJS(code, ind);
+  if (L==='css'||L==='scss'||L==='sass')                       return fmtCSS(code, ind);
+  if (L==='html')                                              return fmtHTML(code, ind);
+  if (L==='xml'||L==='svg')                                    return fmtXML(code, ind);
+  if (['java','c','c++','c#','kotlin','go','rust','php'].some(x=>L.includes(x))) return fmtBraces(code, ind);
+  if (L==='sql')                                               return fmtSQL(code, ind);
+  if (L==='python')                                            return fmtPython(code, ind);
+  if (L==='yaml'||L==='toml'||L==='shell'||L==='markdown')    return fmtTrimOnly(code);
+  return null;
 }
 
-/* ─ JS formatter (tokens-based) ─ */
-function formatJS(code, indent) {
-  // Normalize semicolons & brace spacing, then re-indent by brace depth
-  let lines = code.split('\n').map(l => l.trim()).filter((l,i,a) => !(l==='' && a[i-1]===''));
-  let out = [], depth = 0;
-  for (let line of lines) {
-    if (!line) { out.push(''); continue; }
-    // dedent before closing braces
-    const closes = (line.match(/^[}\])]/) || []).length;
-    depth = Math.max(0, depth - closes);
-    out.push(indent.repeat(depth) + line);
-    // count net braces
-    const open  = (line.match(/[{[(]/g)||[]).length;
-    const close = (line.match(/[}\])]/g)||[]).length;
-    depth += open - close + closes;
-    depth = Math.max(0, depth);
+// ─── Helpers ───────────────────────────────────────────
+
+// Tokenize a source string into segments: 'code' | 'string' | 'comment' | 'template'
+// Handles: '', "", ``, //, /* */, #, --
+function tokenize(src, opts={}) {
+  const { lineComment='///', blockStart='/*', blockEnd='*/', hashComment=false, dashComment=false } = opts;
+  const tokens = []; // [{type, val}]
+  let i=0, n=src.length;
+
+  while (i < n) {
+    // line comment //
+    if (!hashComment && !dashComment && src[i]==='/' && src[i+1]==='/' ) {
+      let j=i; while(j<n && src[j]!=='\n') j++;
+      tokens.push({t:'cmt', v:src.slice(i,j)}); i=j; continue;
+    }
+    // hash comment #
+    if (hashComment && src[i]==='#') {
+      let j=i; while(j<n && src[j]!=='\n') j++;
+      tokens.push({t:'cmt', v:src.slice(i,j)}); i=j; continue;
+    }
+    // SQL / Lua dash comment --
+    if (dashComment && src[i]==='-' && src[i+1]==='-') {
+      let j=i; while(j<n && src[j]!=='\n') j++;
+      tokens.push({t:'cmt', v:src.slice(i,j)}); i=j; continue;
+    }
+    // block comment /* */
+    if (src[i]==='/' && src[i+1]==='*') {
+      let j=src.indexOf('*/',i+2);
+      j = j<0 ? n : j+2;
+      tokens.push({t:'cmt', v:src.slice(i,j)}); i=j; continue;
+    }
+    // template literal `...`
+    if (src[i]==='`') {
+      let j=i+1;
+      while(j<n) { if(src[j]==='\\'){j+=2;continue;} if(src[j]==='`'){j++;break;} j++; }
+      tokens.push({t:'tmpl', v:src.slice(i,j)}); i=j; continue;
+    }
+    // single/double quoted string
+    if (src[i]==='"'||src[i]==="'") {
+      const q=src[i]; let j=i+1;
+      while(j<n) { if(src[j]==='\\'){j+=2;continue;} if(src[j]===q){j++;break;} if(src[j]==='\n')break; j++; }
+      tokens.push({t:'str', v:src.slice(i,j)}); i=j; continue;
+    }
+    // regular code — collect until next special char
+    let j=i;
+    while(j<n) {
+      const c=src[j];
+      if(c==='"'||c==="'"||c==='`') break;
+      if(c==='/'&&(src[j+1]==='/'||src[j+1]==='*')) break;
+      if(hashComment&&c==='#') break;
+      if(dashComment&&c==='-'&&src[j+1]==='-') break;
+      j++;
+    }
+    if(j>i) tokens.push({t:'code', v:src.slice(i,j)});
+    i=j;
   }
-  return out.join('\n');
+  return tokens;
 }
 
-/* ─ CSS formatter ─ */
-function formatCSS(code, indent) {
-  // Expand minified CSS, then re-indent
-  let expanded = code
-    .replace(/\s*{\s*/g, ' {\n')
-    .replace(/;\s*/g, ';\n')
-    .replace(/\s*}\s*/g, '\n}\n')
-    .replace(/\n{3,}/g, '\n\n');
-  return formatBraces(expanded, indent);
+// Reconstruct source from tokens (unchanged non-code parts)
+function fromTokens(tokens) { return tokens.map(t=>t.v).join(''); }
+
+// Strip trailing whitespace from each line, normalize final newline
+function normalizeLines(src) {
+  const lines = src.split('\n').map(l=>l.trimEnd());
+  while(lines.length>1 && lines[lines.length-1]==='') lines.pop();
+  return lines.join('\n') + '\n';
 }
 
-/* ─ Generic brace indenter ─ */
-function formatBraces(code, indent) {
-  const lines = code.split('\n').map(l => l.trimEnd());
-  let out = [], depth = 0;
+// Re-indent code-only portions using brace depth, preserving strings/comments
+function indentByDepth(src, ind, opts={}) {
+  const { lineCommentPrefixes=['//'], hashComment=false, dashComment=false } = opts;
+  // Work line by line; track string state across lines (for multi-line strings we skip)
+  const lines = src.split('\n');
+  let depth = 0;
+  const out = [];
+
   for (let raw of lines) {
     const line = raw.trim();
     if (!line) { out.push(''); continue; }
-    const closes = (line.match(/^[}\])]/) || []).length;
-    depth = Math.max(0, depth - closes);
-    out.push(indent.repeat(depth) + line);
-    const open  = (line.match(/[{[(]/g)||[]).length;
-    const close = (line.match(/[}\])]/g)||[]).length;
-    depth = Math.max(0, depth + open - close + closes);
+
+    // Determine if line is entirely a comment
+    const isComment = lineCommentPrefixes.some(p=>line.startsWith(p)) ||
+                      (hashComment && line.startsWith('#')) ||
+                      (dashComment && line.startsWith('--'));
+
+    // Count open/close braces OUTSIDE strings on this line
+    let opens=0, closes=0;
+    if (!isComment) {
+      const toks = tokenize(line, opts);
+      for (const tok of toks) {
+        if (tok.t==='code') {
+          opens  += (tok.v.match(/[{[(]/g)||[]).length;
+          closes += (tok.v.match(/[}\])]/g)||[]).length;
+        }
+      }
+    }
+
+    // Leading close braces dedent BEFORE this line
+    const leadCloses = (() => {
+      let c=0;
+      for(let i=0;i<line.length;i++){
+        const ch=line[i];
+        if(ch==='}'||ch===']'||ch===')') c++;
+        else break;
+      }
+      return c;
+    })();
+    // But only if they weren't inside a string
+    const safeLead = isComment ? 0 : Math.min(leadCloses, depth);
+    depth = Math.max(0, depth - safeLead);
+
+    out.push(ind.repeat(depth) + line);
+    depth = Math.max(0, depth + opens - closes + safeLead);
   }
-  // remove trailing blank lines, ensure single newline at end
-  while (out.length && out[out.length-1]==='') out.pop();
+
+  while(out.length && !out[out.length-1].trim()) out.pop();
   return out.join('\n') + '\n';
 }
 
-/* ─ XML / HTML formatter ─ */
-function formatXML(code, indent) {
-  // Tokenize tags and text
-  const tokens = [];
-  let i = 0, s = code.replace(/>\s+</g, '><').trim();
-  while (i < s.length) {
-    if (s[i] === '<') {
-      let j = s.indexOf('>', i);
-      if (j < 0) j = s.length - 1;
-      tokens.push(s.slice(i, j+1));
-      i = j + 1;
+// ─── JSON ───────────────────────────────────────────────
+function fmtJSON(code, ind) {
+  // Parse + re-serialize — 100% correct
+  const parsed = JSON.parse(code.trim());
+  return JSON.stringify(parsed, null, ind) + '\n';
+}
+
+// ─── JavaScript / TypeScript ────────────────────────────
+function fmtJS(code, ind) {
+  // Step 1: normalize spacing around operators and keywords
+  let src = code;
+
+  // ensure space after keywords: if/for/while/switch/catch
+  src = src.replace(/\b(if|for|while|switch|catch)\s*\(/g, '$1 (');
+  // space before { (except template literals)
+  src = src.replace(/([^\s])\s*\{/g, (m,p1) => p1+' {');
+  // ensure no space before ( in function calls (rough — safe to skip deeply)
+  // ensure single space after comma outside strings
+  // Step 2: re-indent respecting strings/comments/template literals
+  src = indentByDepth(src, ind, { lineCommentPrefixes:['//'], hashComment:false });
+
+  return normalizeLines(src);
+}
+
+// ─── CSS / SCSS ─────────────────────────────────────────
+function fmtCSS(code, ind) {
+  // Tokenize to protect strings
+  const toks = tokenize(code, { lineCommentPrefixes:['//'] });
+  let src = '';
+  for (const tok of toks) {
+    if (tok.t !== 'code') { src += tok.v; continue; }
+    let c = tok.v;
+    // expand { and }
+    c = c.replace(/\s*\{\s*/g, ' {\n');
+    c = c.replace(/\s*}\s*/g, '\n}\n\n');
+    // expand ; (property declarations)
+    c = c.replace(/;\s*/g, ';\n');
+    // collapse multiple blank lines
+    c = c.replace(/\n{3,}/g, '\n\n');
+    src += c;
+  }
+  // Now re-indent
+  const lines = src.split('\n');
+  let depth=0, out=[];
+  for (let raw of lines) {
+    const line = raw.trim();
+    if (!line) { if(out.length && out[out.length-1]!='') out.push(''); continue; }
+    const isClose = line.startsWith('}');
+    if (isClose) depth = Math.max(0, depth-1);
+    out.push(ind.repeat(depth) + line);
+    if (line.endsWith('{')) depth++;
+  }
+  while(out.length && !out[out.length-1].trim()) out.pop();
+  return out.join('\n') + '\n';
+}
+
+// ─── Generic brace languages (Java, C, C#, Kotlin, Go, Rust, PHP…) ─
+function fmtBraces(code, ind) {
+  // Normalize: space before {, newline after {, newline before }
+  const toks = tokenize(code);
+  let src = '';
+  for (const tok of toks) {
+    if (tok.t !== 'code') { src += tok.v; continue; }
+    let c = tok.v;
+    // space before {
+    c = c.replace(/([^\s{])\s*\{/g, '$1 {');
+    // ensure { and } trigger newlines in code
+    c = c.replace(/\{\s*/g, '{\n');
+    c = c.replace(/\s*}/g, '\n}');
+    // ; → newline (single-statement lines)
+    c = c.replace(/;\s*(?=[^\n])/g, ';\n');
+    // collapse 3+ blank lines
+    c = c.replace(/\n{3,}/g, '\n\n');
+    src += c;
+  }
+  return indentByDepth(src, ind);
+}
+
+// ─── SQL ────────────────────────────────────────────────
+function fmtSQL(code, ind) {
+  // Uppercase + line-break before major clauses
+  const CLAUSES = ['SELECT','FROM','WHERE','INNER JOIN','LEFT JOIN','RIGHT JOIN','OUTER JOIN',
+    'CROSS JOIN','JOIN','ON','GROUP BY','ORDER BY','HAVING','LIMIT','OFFSET',
+    'UNION ALL','UNION','INSERT INTO','VALUES','UPDATE','SET','DELETE FROM',
+    'CREATE TABLE','ALTER TABLE','DROP TABLE','WITH'];
+
+  const toks = tokenize(code, { dashComment:true });
+  let src = toks.map(t=>t.v).join('');
+
+  // Normalize whitespace in code-only portions
+  let result = '';
+  for (const tok of toks) {
+    if (tok.t !== 'code') { result += tok.v; continue; }
+    let c = tok.v.replace(/[ \t]+/g, ' ');
+    // uppercase SQL keywords
+    c = c.replace(/\b(select|from|where|join|on|and|or|not|in|between|like|is|null|order\s+by|group\s+by|having|limit|offset|union(\s+all)?|insert\s+into|values|update|set|delete\s+from|create\s+table|alter\s+table|drop\s+table|with|case|when|then|else|end|as|distinct|count|sum|avg|min|max|inner|left|right|outer|cross)\b/gi,
+      m => m.toUpperCase().replace(/\s+/g,' '));
+    result += c;
+  }
+
+  // Insert newlines before major clauses (pad with space so word-boundary works)
+  src = ' ' + result.trim();
+  for (const clause of CLAUSES) {
+    // only break when clause appears after space/comma (not inside word)
+    const re = new RegExp('(\\s|,)(' + clause.replace(/ /g,'\\s+') + ')\\b', 'gi');
+    src = src.replace(re, (m,pre,kw) => '\n' + kw.toUpperCase().replace(/\s+/g,' '));
+  }
+  // AND / OR on indented new line
+  src = src.replace(/\s+\b(AND|OR)\b/gi, '\n  $1');
+  // Comma-separated columns: newline + indent
+  // Only in SELECT / column lists, not in function args (heuristic: short lines)
+  src = src.replace(/,\s*(?=[^()\n]{1,80}(?:,|\n|$))/g, ',\n  ');
+
+  const lines = src.split('\n').map(l=>l.trim()).filter(l=>l);
+  return lines.join('\n') + '\n';
+}
+
+// ─── HTML ───────────────────────────────────────────────
+function fmtHTML(code, ind) {
+  const VOID = new Set(['area','base','br','col','embed','hr','img','input','link','meta','param','source','track','wbr']);
+  const INLINE = new Set(['a','abbr','acronym','b','bdo','big','br','cite','code','dfn','em','i','img','input','kbd','label','map','object','output','q','samp','select','small','span','strong','sub','sup','textarea','time','tt','var']);
+  const PRE = new Set(['pre','script','style','textarea']);
+
+  // Simple HTML tokenizer: returns [{type:'tag'|'text'|'comment'|'doctype', val, name, selfClose, isClose}]
+  function tokenizeHTML(src) {
+    const tokens = [];
+    let i=0;
+    while(i<src.length) {
+      if(src[i]==='<') {
+        if(src.startsWith('<!--',i)) {
+          const j=src.indexOf('-->',i+4); const end=j<0?src.length:j+3;
+          tokens.push({type:'comment',val:src.slice(i,end)}); i=end;
+        } else if(src.startsWith('<!',i)) {
+          const j=src.indexOf('>',i); const end=j<0?src.length:j+1;
+          tokens.push({type:'doctype',val:src.slice(i,end)}); i=end;
+        } else {
+          const j=src.indexOf('>',i); const end=j<0?src.length:j+1;
+          const tagStr=src.slice(i,end);
+          const isClose=tagStr.startsWith('</');
+          const selfClose=tagStr.endsWith('/>');
+          const nameMatch=tagStr.match(/<\/?([a-zA-Z][^\s>/]*)/);
+          const name=(nameMatch?nameMatch[1]:'').toLowerCase();
+          tokens.push({type:'tag',val:tagStr,name,isClose,selfClose}); i=end;
+        }
+      } else {
+        const j=src.indexOf('<',i); const end=j<0?src.length:j;
+        const text=src.slice(i,end);
+        if(text.trim()) tokens.push({type:'text',val:text});
+        else if(text.includes('\n')) tokens.push({type:'ws',val:text});
+        i=end;
+      }
+    }
+    return tokens;
+  }
+
+  const tokens = tokenizeHTML(code.trim());
+  const out = [];
+  let depth = 0;
+  let inPre = false;
+
+  for(const tok of tokens) {
+    if(tok.type==='ws') continue; // discard whitespace-only text between tags
+
+    if(inPre) {
+      out.push(tok.val);
+      if(tok.type==='tag' && tok.isClose && PRE.has(tok.name)) inPre=false;
+      continue;
+    }
+
+    if(tok.type==='comment'||tok.type==='doctype') {
+      out.push(ind.repeat(depth)+tok.val);
+      continue;
+    }
+
+    if(tok.type==='text') {
+      out.push(ind.repeat(depth)+tok.val.trim());
+      continue;
+    }
+
+    // tag
+    if(tok.isClose) {
+      if(!INLINE.has(tok.name)) {
+        depth=Math.max(0,depth-1);
+        out.push(ind.repeat(depth)+tok.val);
+      } else {
+        // inline close — append to last line if possible
+        if(out.length) out[out.length-1]+=tok.val;
+        else out.push(ind.repeat(depth)+tok.val);
+      }
     } else {
-      let j = s.indexOf('<', i);
-      if (j < 0) j = s.length;
-      const text = s.slice(i, j).trim();
-      if (text) tokens.push(text);
-      i = j;
+      if(INLINE.has(tok.name)) {
+        if(out.length) out[out.length-1]+=tok.val;
+        else out.push(ind.repeat(depth)+tok.val);
+      } else {
+        out.push(ind.repeat(depth)+tok.val);
+        if(!VOID.has(tok.name)&&!tok.selfClose) depth++;
+        if(PRE.has(tok.name)) inPre=true;
+      }
     }
   }
-  let out = [], depth = 0;
-  for (const tok of tokens) {
-    if (tok.startsWith('</')) {
-      depth = Math.max(0, depth - 1);
-      out.push(indent.repeat(depth) + tok);
-    } else if (tok.startsWith('<') && !tok.startsWith('<!') && !tok.startsWith('<?') && !tok.endsWith('/>') && !tok.startsWith('<br') && !tok.startsWith('<input') && !tok.startsWith('<img') && !tok.startsWith('<hr') && !tok.startsWith('<meta') && !tok.startsWith('<link')) {
-      out.push(indent.repeat(depth) + tok);
+
+  return out.join('\n') + '\n';
+}
+
+// ─── XML ────────────────────────────────────────────────
+function fmtXML(code, ind) {
+  // Simple tag-based reformatter
+  const s = code.replace(/>\s+</g,'><').trim();
+  const parts = [];
+  let i=0;
+  while(i<s.length){
+    if(s[i]==='<'){
+      const j=s.indexOf('>',i); if(j<0)break;
+      parts.push(s.slice(i,j+1)); i=j+1;
+    } else {
+      const j=s.indexOf('<',i); const end=j<0?s.length:j;
+      const t=s.slice(i,end).trim(); if(t) parts.push(t);
+      i=end;
+    }
+  }
+  let depth=0, out=[];
+  for(const p of parts){
+    if(p.startsWith('</')){
+      depth=Math.max(0,depth-1);
+      out.push(ind.repeat(depth)+p);
+    } else if(p.startsWith('<')&&!p.startsWith('<?')&&!p.startsWith('<!')&&!p.endsWith('/>')){
+      out.push(ind.repeat(depth)+p);
       depth++;
     } else {
-      out.push(indent.repeat(depth) + tok);
+      out.push(ind.repeat(depth)+p);
     }
   }
-  return out.join('\n');
+  return out.join('\n')+'\n';
 }
 
-/* ─ Generic re-indent (strip trailing spaces, collapse 3+ blank lines) ─ */
-function reindent(code, indent, lang) {
-  const lines = code.split('\n').map(l => l.trimEnd());
-  // collapse excessive blank lines
-  const out = [];
-  let blanks = 0;
-  for (const l of lines) {
-    if (!l.trim()) { blanks++; if (blanks <= 2) out.push(''); }
-    else { blanks = 0; out.push(l); }
+// ─── Python ─────────────────────────────────────────────
+// Python is whitespace-sensitive — we only strip trailing spaces and normalize blank lines
+function fmtPython(code, ind) {
+  return fmtTrimOnly(code);
+}
+
+// ─── Trim-only (YAML, TOML, Shell, Markdown, Python) ────
+function fmtTrimOnly(code) {
+  const lines = code.split('\n').map(l=>l.trimEnd());
+  let out=[], blanks=0;
+  for(const l of lines){
+    if(!l.trim()){blanks++;if(blanks<=2)out.push('');}
+    else{blanks=0;out.push(l);}
   }
-  while (out.length && !out[out.length-1]) out.pop();
-  return out.join('\n') + '\n';
+  while(out.length&&!out[out.length-1].trim()) out.pop();
+  return out.join('\n')+'\n';
 }
 
 
