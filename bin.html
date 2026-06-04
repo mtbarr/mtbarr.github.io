@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>paste</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0d0d0d;
+  --font: 'Source Code Pro', monospace;
+  --fsize: 14.5px;
+  --lh: 1.75;
+  --pad: 52px 64px;
+  --accent: #7c8cf8;
+}
+
+html, body { height: 100%; background: var(--bg); overflow: hidden; }
+
+/* ── wrapper ── */
+#wrap {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+}
+
+/* ── shared layer styles ── */
+#hl, #e {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: var(--pad);
+  font-family: var(--font);
+  font-size: var(--fsize);
+  line-height: var(--lh);
+  white-space: pre;
+  overflow-wrap: normal;
+  word-break: normal;
+  tab-size: 2;
+}
+
+/* ── highlight layer (behind) ── */
+#hl {
+  overflow: auto;
+  pointer-events: none;
+  color: #d4d4d4;
+  background: var(--bg);
+  scrollbar-width: thin;
+  scrollbar-color: #1e1e1e transparent;
+}
+#hl::-webkit-scrollbar { width: 6px; height: 6px; }
+#hl::-webkit-scrollbar-thumb { background: #1e1e1e; border-radius: 3px; }
+
+/* ── textarea (on top, invisible text) ── */
+#e {
+  overflow: auto;
+  background: transparent;
+  color: transparent;
+  caret-color: var(--accent);
+  border: none;
+  outline: none;
+  resize: none;
+  -webkit-text-fill-color: transparent;
+  scrollbar-width: none;
+  z-index: 2;
+  spellcheck: false;
+}
+#e::-webkit-scrollbar { display: none; }
+#e::selection { background: rgba(124,140,248,0.22); }
+
+/* ── markdown colors ── */
+
+/* headings */
+.md-h1 { color: #ececec; font-weight: 600; }
+.md-h2 { color: #d0d0d0; font-weight: 600; }
+.md-h3 { color: #b8b8b8; font-weight: 600; }
+.md-hN { color: #999;    font-weight: 600; }
+
+/* markers: # * _ ` > - [] etc */
+.md-marker  { color: #3d3d3d; }
+
+/* bold / italic */
+.md-bold    { color: #e8e8e8; font-weight: 600; }
+.md-italic  { color: #b0b0b0; font-style: italic; }
+
+/* inline code */
+.md-icode   { color: #e06c75; }
+
+/* blockquote text */
+.md-bq      { color: #666; }
+
+/* links */
+.md-link    { color: var(--accent); }
+
+/* hr */
+.md-hr      { color: #2a2a2a; }
+
+/* code fence language tag */
+.md-fence-lang { color: #555; }
+
+/* code block content: handled by hljs */
+.hljs { background: transparent !important; }
+
+/* ── hint ── */
+#hint {
+  position: fixed;
+  bottom: 20px;
+  right: 24px;
+  font-family: var(--font);
+  font-size: 11px;
+  color: #2e2e2e;
+  pointer-events: none;
+  transition: opacity 0.3s;
+  z-index: 10;
+}
+#hint.hidden { opacity: 0; }
+
+/* ── flash ── */
+#flash {
+  position: fixed;
+  inset: 0;
+  background: var(--accent);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 20;
+  transition: opacity 0.08s;
+}
+</style>
+</head>
+<body>
+
+<div id="flash"></div>
+<div id="wrap">
+  <div id="hl"></div>
+  <textarea id="e" spellcheck="false" autocorrect="off" autocapitalize="off" autofocus
+    placeholder="# escreva markdown aqui..."></textarea>
+</div>
+<div id="hint">ctrl+s — salvar</div>
+
+<script>
+const e     = document.getElementById('e');
+const hl    = document.getElementById('hl');
+const hint  = document.getElementById('hint');
+const flash = document.getElementById('flash');
+let hintTimer, renderTimer;
+
+// ── escape html ───────────────────────────────────────────────────────────────
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── inline markdown spans ─────────────────────────────────────────────────────
+function inlineSpans(raw) {
+  // process inline markdown within a single line (not inside code)
+  // order matters: code first, then bold/italic, then links
+  let s = raw;
+
+  // inline code `...`
+  s = s.replace(/(`+)([\s\S]*?)\1/g, (m, ticks, inner) =>
+    `<span class="md-marker">${esc(ticks)}</span><span class="md-icode">${esc(inner)}</span><span class="md-marker">${esc(ticks)}</span>`
+  );
+
+  // bold+italic ***...***
+  s = s.replace(/(\*{3}|_{3})([\s\S]*?)\1/g, (m, mark, inner) =>
+    `<span class="md-marker">${esc(mark)}</span><span class="md-bold md-italic">${inner}</span><span class="md-marker">${esc(mark)}</span>`
+  );
+
+  // bold **...** or __...__
+  s = s.replace(/(\*{2}|_{2})([\s\S]*?)\1/g, (m, mark, inner) =>
+    `<span class="md-marker">${esc(mark)}</span><span class="md-bold">${inner}</span><span class="md-marker">${esc(mark)}</span>`
+  );
+
+  // italic *...* or _..._  (not inside words for _)
+  s = s.replace(/(\*|(?<!\w)_)([\s\S]*?)(\*|_(?!\w))/g, (m, o, inner, c) =>
+    `<span class="md-marker">${esc(o)}</span><span class="md-italic">${inner}</span><span class="md-marker">${esc(c)}</span>`
+  );
+
+  // links [text](url)
+  s = s.replace(/(\[)(.*?)(\]\()([^)]*?)(\))/g, (m, ob, text, mc, url, cb) =>
+    `<span class="md-marker">${esc(ob)}</span>${text}<span class="md-marker">${esc(mc)}</span><span class="md-link">${esc(url)}</span><span class="md-marker">${esc(cb)}</span>`
+  );
+
+  // images ![alt](url)
+  s = s.replace(/(!?\[)(.*?)(\]\()([^)]*?)(\))/g, (m, ob, text, mc, url, cb) =>
+    `<span class="md-marker">${esc(ob)}</span>${text}<span class="md-marker">${esc(mc)}</span><span class="md-link">${esc(url)}</span><span class="md-marker">${esc(cb)}</span>`
+  );
+
+  return s;
+}
+
+// ── main tokenizer ────────────────────────────────────────────────────────────
+function tokenize(text) {
+  const lines = text.split('\n');
+  let out = '';
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    // ── fenced code block ────────────────────────────────────────────────────
+    const fenceMatch = line.match(/^(`{3,}|~{3,})([\w-]*)/);
+    if (fenceMatch) {
+      const fence = fenceMatch[1];
+      const lang  = fenceMatch[2] || '';
+      const langDisplay = lang
+        ? `<span class="md-marker">${esc(fence)}</span><span class="md-fence-lang">${esc(lang)}</span>`
+        : `<span class="md-marker">${esc(fence + lang)}</span>`;
+      out += langDisplay + '\n';
+      i++;
+
+      // collect code lines until closing fence
+      let codeLines = [];
+      while (i < lines.length && !lines[i].startsWith(fence)) {
+        codeLines.push(lines[i]);
+        i++;
+      }
+
+      const codeText = codeLines.join('\n');
+      let highlighted;
+      try {
+        if (lang && hljs.getLanguage(lang)) {
+          highlighted = hljs.highlight(codeText, { language: lang }).value;
+        } else {
+          highlighted = codeText.length > 8
+            ? hljs.highlightAuto(codeText).value
+            : esc(codeText);
+        }
+      } catch(_) {
+        highlighted = esc(codeText);
+      }
+
+      out += highlighted + '\n';
+
+      // closing fence
+      if (i < lines.length) {
+        out += `<span class="md-marker">${esc(lines[i])}</span>\n`;
+        i++;
+      }
+      continue;
+    }
+
+    // ── hr ───────────────────────────────────────────────────────────────────
+    if (/^(\*{3,}|-{3,}|_{3,})\s*$/.test(line)) {
+      out += `<span class="md-hr">${esc(line)}</span>\n`;
+      i++; continue;
+    }
+
+    // ── headings ─────────────────────────────────────────────────────────────
+    const hMatch = line.match(/^(#{1,6})\s/);
+    if (hMatch) {
+      const level = hMatch[1].length;
+      const cls = level === 1 ? 'md-h1' : level === 2 ? 'md-h2' : level === 3 ? 'md-h3' : 'md-hN';
+      const markerEnd = hMatch[1].length + 1;
+      const rest = inlineSpans(esc(line.slice(markerEnd)));
+      out += `<span class="md-marker">${esc(line.slice(0, markerEnd))}</span><span class="${cls}">${rest}</span>\n`;
+      i++; continue;
+    }
+
+    // ── blockquote ───────────────────────────────────────────────────────────
+    if (/^>\s?/.test(line)) {
+      const marker = line.match(/^(>\s?)/)[1];
+      const rest = inlineSpans(esc(line.slice(marker.length)));
+      out += `<span class="md-marker">${esc(marker)}</span><span class="md-bq">${rest}</span>\n`;
+      i++; continue;
+    }
+
+    // ── list item ────────────────────────────────────────────────────────────
+    const liMatch = line.match(/^(\s*(?:[-*+]|\d+\.)\s)/);
+    if (liMatch) {
+      const marker = liMatch[1];
+      const rest = inlineSpans(esc(line.slice(marker.length)));
+      out += `<span class="md-marker">${esc(marker)}</span>${rest}\n`;
+      i++; continue;
+    }
+
+    // ── normal line ──────────────────────────────────────────────────────────
+    out += inlineSpans(esc(line)) + '\n';
+    i++;
+  }
+
+  // trim trailing newline added above
+  return out.replace(/\n$/, '');
+}
+
+// ── render ────────────────────────────────────────────────────────────────────
+function render() {
+  hl.innerHTML = tokenize(e.value);
+  syncScroll();
+}
+
+function scheduleRender() {
+  clearTimeout(renderTimer);
+  renderTimer = setTimeout(render, 40);
+}
+
+// ── sync scroll ───────────────────────────────────────────────────────────────
+function syncScroll() {
+  hl.scrollTop  = e.scrollTop;
+  hl.scrollLeft = e.scrollLeft;
+}
+
+e.addEventListener('scroll', syncScroll);
+e.addEventListener('input', () => {
+  scheduleRender();
+  clearTimeout(hintTimer);
+  hint.classList.add('hidden');
+});
+
+// ── tab ───────────────────────────────────────────────────────────────────────
+e.addEventListener('keydown', ev => {
+  if (ev.key === 'Tab') {
+    ev.preventDefault();
+    const s = e.selectionStart;
+    e.value = e.value.substring(0, s) + '  ' + e.value.substring(e.selectionEnd);
+    e.selectionStart = e.selectionEnd = s + 2;
+    scheduleRender();
+  }
+});
+
+// ── save ──────────────────────────────────────────────────────────────────────
+function save() {
+  const text = e.value;
+  if (!text.trim()) return;
+  const hash = LZString.compressToEncodedURIComponent(text);
+  window.history.replaceState(null, '', '#' + hash);
+  navigator.clipboard.writeText(location.href).catch(() => {});
+  flash.style.opacity = '0.05';
+  setTimeout(() => flash.style.opacity = '0', 130);
+  hint.textContent = 'link copiado';
+  hint.classList.remove('hidden');
+  clearTimeout(hintTimer);
+  hintTimer = setTimeout(() => hint.classList.add('hidden'), 2000);
+}
+
+// ── load ──────────────────────────────────────────────────────────────────────
+function load() {
+  const hash = location.hash.slice(1);
+  if (!hash) return;
+  try {
+    const text = LZString.decompressFromEncodedURIComponent(hash);
+    if (text) {
+      e.value = text;
+      hint.textContent = 'ctrl+n — novo';
+      hint.classList.remove('hidden');
+      render();
+    }
+  } catch(_) {}
+}
+
+// ── shortcuts ─────────────────────────────────────────────────────────────────
+document.addEventListener('keydown', ev => {
+  if ((ev.ctrlKey || ev.metaKey) && ev.key === 's') { ev.preventDefault(); save(); }
+  if ((ev.ctrlKey || ev.metaKey) && ev.key === 'n') {
+    ev.preventDefault();
+    e.value = '';
+    hl.innerHTML = '';
+    window.history.replaceState(null, '', location.pathname);
+    hint.textContent = 'ctrl+s — salvar';
+    hint.classList.remove('hidden');
+    e.focus();
+  }
+});
+
+window.addEventListener('hashchange', load);
+load();
+</script>
+</body>
+</html>
